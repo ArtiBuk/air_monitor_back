@@ -1,0 +1,12 @@
+#!/bin/sh
+
+set -e
+
+if [ ! -x .venv/bin/ruff ]; then
+  echo "ruff не найден в .venv/bin/ruff"
+  echo "Установи dev-зависимости и повтори коммит."
+  exit 1
+fi
+
+.venv/bin/ruff check --fix .
+.venv/bin/ruff format .

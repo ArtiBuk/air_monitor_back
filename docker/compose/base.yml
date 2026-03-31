@@ -1,0 +1,88 @@
+services:
+  web:
+    build:
+      context: ../..
+      dockerfile: docker/app/Dockerfile
+    container_name: air-monitor-web
+    hostname: air-monitor-web
+    restart: unless-stopped
+    env_file:
+      - ../env/app.env
+      - ../env/db.env
+    command: ["/opt/docker/app/entrypoints/start-web.sh"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    volumes:
+      - ../../apps:/app/apps
+      - ../../config:/app/config
+      - ../../manage.py:/app/manage.py
+      - static_data:/app/staticfiles
+      - media_data:/app/media
+    healthcheck:
+      test: ["CMD", "/opt/docker/app/healthcheck/web.sh"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - air_monitor_network
+
+  worker:
+    build:
+      context: ../..
+      dockerfile: docker/app/Dockerfile
+    container_name: air-monitor-worker
+    hostname: air-monitor-worker
+    restart: unless-stopped
+    env_file:
+      - ../env/app.env
+      - ../env/db.env
+    command: ["/opt/docker/app/entrypoints/start-worker.sh"]
+    depends_on:
+      web:
+        condition: service_healthy
+    volumes:
+      - ../../apps:/app/apps
+      - ../../config:/app/config
+      - ../../manage.py:/app/manage.py
+    healthcheck:
+      test: ["CMD", "/opt/docker/app/healthcheck/worker.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - air_monitor_network
+
+  beat:
+    build:
+      context: ../..
+      dockerfile: docker/app/Dockerfile
+    container_name: air-monitor-beat
+    hostname: air-monitor-beat
+    restart: unless-stopped
+    env_file:
+      - ../env/app.env
+      - ../env/db.env
+    command: ["/opt/docker/app/entrypoints/start-beat.sh"]
+    depends_on:
+      web:
+        condition: service_healthy
+    volumes:
+      - ../../apps:/app/apps
+      - ../../config:/app/config
+      - ../../manage.py:/app/manage.py
+      - celery_run:/app/run
+    healthcheck:
+      test: ["CMD", "/opt/docker/app/healthcheck/beat.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - air_monitor_network
