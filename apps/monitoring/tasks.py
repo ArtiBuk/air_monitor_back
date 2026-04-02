@@ -247,9 +247,7 @@ SCHEDULED_TASK_EXECUTION_MAP = {
 @shared_task(name="apps.monitoring.tasks.execute_scheduled_monitoring_task")
 def execute_scheduled_monitoring_task(*, scheduled_task_id: str):
     with transaction.atomic():
-        scheduled_task = (
-            ScheduledMonitoringTask.objects.select_for_update().filter(id=scheduled_task_id).first()
-        )
+        scheduled_task = ScheduledMonitoringTask.objects.select_for_update().filter(id=scheduled_task_id).first()
         if scheduled_task is None:
             raise ValueError("Scheduled task not found.")
 

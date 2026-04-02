@@ -225,9 +225,7 @@ def test_collect_observations_async_can_schedule_for_later(
     assert payload["scheduled_task_id"]
     assert payload["scheduled_for"] == scheduled_for.isoformat().replace("+00:00", "Z")
 
-    detail_response = authenticated_client.get(
-        f"/api/monitoring/scheduled-tasks/{payload['scheduled_task_id']}"
-    )
+    detail_response = authenticated_client.get(f"/api/monitoring/scheduled-tasks/{payload['scheduled_task_id']}")
     assert detail_response.status_code == 200
     detail_payload = detail_response.json()
     assert detail_payload["status"] == "scheduled"
