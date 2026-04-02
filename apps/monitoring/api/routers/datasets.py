@@ -43,6 +43,8 @@ def build_dataset_async(request, payload: BuildDatasetPayload):
             forecast_horizon_hours=payload.forecast_horizon_hours,
             feature_columns=payload.feature_columns,
             target_columns=payload.target_columns,
+            requested_by_id=str(request.auth.id),
+            scheduled_for=payload.scheduled_for,
         )
     except Exception as exc:
         return error_response(exc)

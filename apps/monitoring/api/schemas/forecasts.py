@@ -35,6 +35,7 @@ class ForecastGeneratePayload(Schema):
     forecast_horizon_hours: int = 24
     model_version_id: UUID | None = None
     generated_from_timestamp_utc: datetime | None = None
+    scheduled_for: datetime | None = None
 
 
 class ForecastEvaluationSchema(ModelSchema):

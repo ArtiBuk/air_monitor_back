@@ -35,6 +35,7 @@ class RunExperimentPayload(Schema):
     dataset: ExperimentDatasetConfigPayload = Field(default_factory=ExperimentDatasetConfigPayload)
     training: ExperimentTrainingConfigPayload = Field(default_factory=ExperimentTrainingConfigPayload)
     backtest: ExperimentBacktestConfigPayload | None = None
+    scheduled_for: datetime | None = None
 
 
 class ExperimentRunSchema(ModelSchema):

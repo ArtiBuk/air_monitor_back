@@ -32,6 +32,7 @@ class CollectObservationsPayload(Schema):
     finish: datetime
     interval: str = "Interval1H"
     window_hours: int = 1
+    scheduled_for: datetime | None = None
 
 
 class ObservationSyncSchema(Schema):

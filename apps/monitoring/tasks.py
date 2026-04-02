@@ -5,9 +5,10 @@ from datetime import UTC, timedelta
 from celery import shared_task
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.db import transaction
 from django.utils import timezone
 
-from .models import DatasetSnapshot, ExperimentSeries, ModelVersion
+from .models import DatasetSnapshot, ExperimentSeries, ModelVersion, ScheduledMonitoringTask
 from .services.experiments import ExperimentService
 from .services.forecasts import ForecastService
 from .services.observations import ObservationSyncService
@@ -38,6 +39,18 @@ def _get_experiment_series(series_id: str | None):
     if not series_id:
         return None
     return ExperimentSeries.objects.filter(id=series_id).first()
+
+
+def _normalize_result_payload(value):
+    if value is None:
+        return None
+    if isinstance(value, (str, int, float, bool)):
+        return value
+    if isinstance(value, dict):
+        return {str(key): _normalize_result_payload(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_normalize_result_payload(item) for item in value]
+    return str(value)
 
 
 @shared_task(name="apps.monitoring.tasks.collect_recent_observations")
@@ -220,3 +233,66 @@ def run_experiment_pipeline(
         result.experiment_run_id,
     )
     return asdict(result)
+
+
+SCHEDULED_TASK_EXECUTION_MAP = {
+    ScheduledMonitoringTask.Operation.COLLECT_OBSERVATIONS: collect_observations_window,
+    ScheduledMonitoringTask.Operation.BUILD_DATASET: build_dataset_snapshot,
+    ScheduledMonitoringTask.Operation.TRAIN_MODEL: train_model_version,
+    ScheduledMonitoringTask.Operation.GENERATE_FORECAST: generate_forecast_run,
+    ScheduledMonitoringTask.Operation.RUN_EXPERIMENT: run_experiment_pipeline,
+}
+
+
+@shared_task(name="apps.monitoring.tasks.execute_scheduled_monitoring_task")
+def execute_scheduled_monitoring_task(*, scheduled_task_id: str):
+    with transaction.atomic():
+        scheduled_task = (
+            ScheduledMonitoringTask.objects.select_for_update().filter(id=scheduled_task_id).first()
+        )
+        if scheduled_task is None:
+            raise ValueError("Scheduled task not found.")
+
+        if scheduled_task.status == ScheduledMonitoringTask.Status.CANCELLED:
+            logger.info("scheduled task skipped task_id=%s status=cancelled", scheduled_task_id)
+            return {
+                "scheduled_task_id": scheduled_task_id,
+                "status": ScheduledMonitoringTask.Status.CANCELLED,
+            }
+
+        scheduled_task.status = ScheduledMonitoringTask.Status.STARTED
+        scheduled_task.started_at = timezone.now()
+        scheduled_task.error = ""
+        scheduled_task.save(update_fields=["status", "started_at", "error", "updated_at"])
+
+    operation_task = SCHEDULED_TASK_EXECUTION_MAP.get(scheduled_task.operation)
+    if operation_task is None:
+        raise ValueError(f"Unsupported scheduled operation: {scheduled_task.operation}")
+
+    try:
+        result = operation_task(**scheduled_task.payload)
+    except Exception as exc:
+        ScheduledMonitoringTask.objects.filter(id=scheduled_task_id).update(
+            status=ScheduledMonitoringTask.Status.FAILED,
+            finished_at=timezone.now(),
+            error=str(exc),
+        )
+        raise
+
+    normalized_result = _normalize_result_payload(result)
+    ScheduledMonitoringTask.objects.filter(id=scheduled_task_id).update(
+        status=ScheduledMonitoringTask.Status.SUCCESS,
+        finished_at=timezone.now(),
+        result=normalized_result,
+        error="",
+    )
+    logger.info(
+        "scheduled task completed scheduled_task_id=%s operation=%s",
+        scheduled_task_id,
+        scheduled_task.operation,
+    )
+    return {
+        "scheduled_task_id": scheduled_task_id,
+        "operation": scheduled_task.operation,
+        "result": normalized_result,
+    }

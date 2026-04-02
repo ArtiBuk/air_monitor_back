@@ -256,3 +256,46 @@ class ExperimentRun(UUIDPrimaryKeyModel):
 
     def __str__(self) -> str:
         return f"experiment:{self.name}:{self.status}"
+
+
+class ScheduledMonitoringTask(UUIDPrimaryKeyModel):
+    class Operation(models.TextChoices):
+        COLLECT_OBSERVATIONS = "collect_observations", "Collect observations"
+        BUILD_DATASET = "build_dataset", "Build dataset"
+        TRAIN_MODEL = "train_model", "Train model"
+        GENERATE_FORECAST = "generate_forecast", "Generate forecast"
+        RUN_EXPERIMENT = "run_experiment", "Run experiment"
+
+    class Status(models.TextChoices):
+        SCHEDULED = "scheduled", "Scheduled"
+        STARTED = "started", "Started"
+        SUCCESS = "success", "Success"
+        FAILED = "failed", "Failed"
+        CANCELLED = "cancelled", "Cancelled"
+
+    requested_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="scheduled_monitoring_tasks",
+        null=True,
+        blank=True,
+    )
+    operation = models.CharField(max_length=64, choices=Operation.choices, db_index=True)
+    status = models.CharField(max_length=32, choices=Status.choices, default=Status.SCHEDULED, db_index=True)
+    scheduled_for = models.DateTimeField(db_index=True)
+    started_at = models.DateTimeField(null=True, blank=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+    celery_task_id = models.CharField(max_length=255, blank=True, db_index=True)
+    payload = models.JSONField(default=dict, blank=True)
+    result = models.JSONField(null=True, blank=True)
+    error = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["-scheduled_for", "-created_at"]
+        indexes = [
+            models.Index(fields=["status", "scheduled_for"]),
+            models.Index(fields=["requested_by", "status"]),
+        ]
+
+    def __str__(self) -> str:
+        return f"scheduled:{self.operation}:{self.status}:{self.scheduled_for.isoformat()}"

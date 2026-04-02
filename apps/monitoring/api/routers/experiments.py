@@ -141,6 +141,7 @@ def run_experiment_async(request, payload: RunExperimentPayload):
                 "patience": payload.training.patience,
                 "seed": payload.training.seed,
             },
+            scheduled_for=payload.scheduled_for,
         )
     except Exception as exc:
         return error_response(exc)

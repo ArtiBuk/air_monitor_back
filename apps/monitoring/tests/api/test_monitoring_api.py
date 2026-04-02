@@ -1,3 +1,4 @@
+from datetime import UTC, datetime, timedelta
 from unittest.mock import patch
 
 import pytest
@@ -194,6 +195,72 @@ def test_run_experiment_async_exposes_task_status(run_experiment, authenticated_
     assert status_response.status_code == 200
     assert status_response.json()["successful"] is True
     assert status_response.json()["result"]["experiment_run_id"] == "experiment-run-1"
+
+
+@patch("apps.monitoring.services.task_queue.execute_scheduled_monitoring_task.apply_async")
+def test_collect_observations_async_can_schedule_for_later(
+    apply_async,
+    authenticated_client,
+    json_post,
+):
+    apply_async.return_value.id = "scheduled-celery-task-1"
+    apply_async.return_value.status = "PENDING"
+    scheduled_for = (datetime.now(UTC) + timedelta(hours=2)).replace(microsecond=0)
+
+    response = json_post(
+        "/api/monitoring/observations/collect/async",
+        {
+            "start": "2026-03-31T09:00:00Z",
+            "finish": "2026-03-31T11:00:00Z",
+            "interval": "Interval1H",
+            "window_hours": 1,
+            "scheduled_for": scheduled_for.isoformat().replace("+00:00", "Z"),
+        },
+    )
+
+    assert response.status_code == 202
+    payload = response.json()
+    assert payload["operation"] == "collect_observations"
+    assert payload["is_scheduled"] is True
+    assert payload["scheduled_task_id"]
+    assert payload["scheduled_for"] == scheduled_for.isoformat().replace("+00:00", "Z")
+
+    detail_response = authenticated_client.get(
+        f"/api/monitoring/scheduled-tasks/{payload['scheduled_task_id']}"
+    )
+    assert detail_response.status_code == 200
+    detail_payload = detail_response.json()
+    assert detail_payload["status"] == "scheduled"
+    assert detail_payload["celery_task_id"] == "scheduled-celery-task-1"
+
+
+@patch("apps.monitoring.services.task_queue.celery_app.control.revoke")
+@patch("apps.monitoring.services.task_queue.execute_scheduled_monitoring_task.apply_async")
+def test_scheduled_task_can_be_cancelled(apply_async, revoke, authenticated_client, json_post):
+    apply_async.return_value.id = "scheduled-celery-task-2"
+    apply_async.return_value.status = "PENDING"
+    scheduled_for = (datetime.now(UTC) + timedelta(hours=3)).replace(microsecond=0)
+
+    response = json_post(
+        "/api/monitoring/datasets/build/async",
+        {
+            "input_len_hours": 72,
+            "forecast_horizon_hours": 24,
+            "scheduled_for": scheduled_for.isoformat().replace("+00:00", "Z"),
+        },
+    )
+
+    assert response.status_code == 202
+    scheduled_task_id = response.json()["scheduled_task_id"]
+
+    cancel_response = json_post(
+        f"/api/monitoring/scheduled-tasks/{scheduled_task_id}/cancel",
+        {},
+    )
+    assert cancel_response.status_code == 200
+    cancel_payload = cancel_response.json()
+    assert cancel_payload["status"] == "cancelled"
+    revoke.assert_called_once_with("scheduled-celery-task-2")
 
 
 def test_monitoring_read_endpoints_expose_datasets_and_models(

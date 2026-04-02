@@ -141,9 +141,7 @@ def ensure_no_conflicting_experiment_run(*, series: ExperimentSeries | None, con
 
 def serialize_backtest_config(*, generated_from_timestamp_utc) -> dict:
     """Собирает конфигурацию backtest для хранения в ExperimentRun."""
-    return {
-        "generated_from_timestamp_utc": _serialize_timestamp(generated_from_timestamp_utc)
-    }
+    return {"generated_from_timestamp_utc": _serialize_timestamp(generated_from_timestamp_utc)}
 
 
 def build_experiment_run_summary(
