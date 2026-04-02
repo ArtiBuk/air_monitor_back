@@ -1,4 +1,4 @@
-from .common import AsyncTaskLaunchSchema, AsyncTaskStatusSchema, MessageSchema
+from .common import AsyncTaskLaunchSchema, AsyncTaskStatusSchema, MessageSchema, ScheduledTaskSchema
 from .datasets import BuildDatasetPayload, DatasetSnapshotSchema
 from .experiments import (
     CreateExperimentSeriesPayload,
@@ -46,5 +46,6 @@ __all__ = (
     "ObservationSchema",
     "ObservationSyncSchema",
     "RunExperimentPayload",
+    "ScheduledTaskSchema",
     "TrainModelPayload",
 )

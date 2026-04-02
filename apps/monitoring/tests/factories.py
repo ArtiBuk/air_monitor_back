@@ -155,7 +155,9 @@ def create_experiment_run(**overrides) -> ExperimentRun:
     dataset_snapshot = overrides.pop("dataset_snapshot", None) or create_dataset_snapshot()
     model_version = overrides.pop("model_version", None) or create_model_version(dataset=dataset_snapshot)
     forecast_run = overrides.pop("forecast_run", None) or create_forecast_run(model_version=model_version)
-    forecast_evaluation = overrides.pop("forecast_evaluation", None) or create_forecast_evaluation(forecast_run=forecast_run)
+    forecast_evaluation = overrides.pop("forecast_evaluation", None) or create_forecast_evaluation(
+        forecast_run=forecast_run
+    )
     payload = {
         "name": "experiment-default",
         "status": ExperimentRun.Status.COMPLETED,
@@ -167,7 +169,14 @@ def create_experiment_run(**overrides) -> ExperimentRun:
         "forecast_horizon_hours": dataset_snapshot.forecast_horizon_hours,
         "feature_columns": list(dataset_snapshot.feature_columns),
         "target_columns": list(dataset_snapshot.target_columns),
-        "training_config": {"epochs": 2, "batch_size": 8, "lr": 0.001, "weight_decay": 0.0001, "patience": 2, "seed": 42},
+        "training_config": {
+            "epochs": 2,
+            "batch_size": 8,
+            "lr": 0.001,
+            "weight_decay": 0.0001,
+            "patience": 2,
+            "seed": 42,
+        },
         "backtest_config": {"generated_from_timestamp_utc": "2026-03-05T23:00:00Z"},
         "summary": {},
     }

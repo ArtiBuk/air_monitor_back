@@ -15,6 +15,7 @@ class TrainModelPayload(Schema):
     weight_decay: float = 1e-4
     patience: int = 25
     seed: int = 42
+    scheduled_for: datetime | None = None
 
 
 class ModelVersionSchema(ModelSchema):

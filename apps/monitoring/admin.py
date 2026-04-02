@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import DatasetSnapshot, ForecastRecord, ForecastRun, ModelVersion, Observation
+from .models import DatasetSnapshot, ForecastRecord, ForecastRun, ModelVersion, Observation, ScheduledMonitoringTask
 
 
 @admin.register(Observation)
@@ -36,3 +36,11 @@ class ModelVersionAdmin(admin.ModelAdmin):
     list_display = ("name", "status", "is_active", "input_len_hours", "forecast_horizon_hours", "created_at")
     list_filter = ("status", "is_active")
     readonly_fields = ("id", "created_at", "updated_at")
+
+
+@admin.register(ScheduledMonitoringTask)
+class ScheduledMonitoringTaskAdmin(admin.ModelAdmin):
+    list_display = ("operation", "status", "scheduled_for", "requested_by", "celery_task_id", "created_at")
+    list_filter = ("operation", "status")
+    search_fields = ("celery_task_id",)
+    readonly_fields = ("id", "created_at", "updated_at", "started_at", "finished_at")

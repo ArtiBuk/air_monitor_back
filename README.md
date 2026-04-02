@@ -239,6 +239,30 @@ http://localhost:8000/api/docs
 
 - `GET /api/monitoring/tasks/{task_id}`
 
+Запланированные задачи:
+
+- `GET /api/monitoring/scheduled-tasks`
+- `GET /api/monitoring/scheduled-tasks/{scheduled_task_id}`
+- `POST /api/monitoring/scheduled-tasks/{scheduled_task_id}/cancel`
+
+## Отложенные задачи
+
+Все `POST .../async` endpoint'ы поддерживают опциональное поле `scheduled_for`.
+
+- если `scheduled_for` не передан, задача сразу ставится в очередь Celery;
+- если `scheduled_for` передан, backend создаёт `ScheduledMonitoringTask`, сохраняет payload и планирует запуск на указанное время;
+- отменить можно только задачу в статусе `scheduled`.
+
+Пример отложенного запуска:
+
+```json
+{
+  "input_len_hours": 72,
+  "forecast_horizon_hours": 24,
+  "scheduled_for": "2026-04-03T06:00:00Z"
+}
+```
+
 ## Контракты `experiments`
 
 Запуск эксперимента использует вложенные блоки `dataset`, `training` и `backtest`.

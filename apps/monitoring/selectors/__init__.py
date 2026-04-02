@@ -12,6 +12,7 @@ from .monitoring import (
     get_latest_forecast_run,
     get_model_version,
     get_model_versions_by_ids,
+    get_scheduled_monitoring_task,
     list_dataset_snapshots,
     list_experiment_runs,
     list_experiment_runs_by_series,
@@ -20,6 +21,7 @@ from .monitoring import (
     list_forecast_runs,
     list_model_versions,
     list_observations,
+    list_scheduled_monitoring_tasks,
 )
 
 __all__ = (
@@ -35,6 +37,7 @@ __all__ = (
     "get_forecast_runs_by_ids",
     "get_latest_forecast_run",
     "get_model_version",
+    "get_scheduled_monitoring_task",
     "get_model_versions_by_ids",
     "list_dataset_snapshots",
     "list_experiment_runs",
@@ -44,4 +47,5 @@ __all__ = (
     "list_forecast_runs",
     "list_model_versions",
     "list_observations",
+    "list_scheduled_monitoring_tasks",
 )

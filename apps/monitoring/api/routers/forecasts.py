@@ -118,6 +118,7 @@ def generate_forecast_async(request, payload: ForecastGeneratePayload):
                 if payload.generated_from_timestamp_utc is not None
                 else None
             ),
+            scheduled_for=payload.scheduled_for,
         )
     except Exception as exc:
         return error_response(exc)

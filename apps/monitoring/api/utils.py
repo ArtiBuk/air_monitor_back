@@ -18,6 +18,9 @@ def accepted_task_response(result: MonitoringTaskLaunchResult):
             "task_id": result.task_id,
             "status": result.status,
             "operation": result.operation,
+            "scheduled_task_id": result.scheduled_task_id,
+            "scheduled_for": result.scheduled_for,
+            "is_scheduled": result.is_scheduled,
         },
     )
 

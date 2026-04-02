@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from ninja import Schema
 from ninja.orm import ModelSchema
 
@@ -9,6 +11,7 @@ class BuildDatasetPayload(Schema):
     forecast_horizon_hours: int = 24
     feature_columns: list[str] | None = None
     target_columns: list[str] | None = None
+    scheduled_for: datetime | None = None
 
 
 class DatasetSnapshotSchema(ModelSchema):

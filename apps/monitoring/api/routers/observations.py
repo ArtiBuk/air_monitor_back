@@ -59,6 +59,8 @@ def collect_observations_async(request, payload: CollectObservationsPayload):
             finish=payload.finish.astimezone(UTC).isoformat().replace("+00:00", "Z"),
             interval=payload.interval,
             window_hours=payload.window_hours,
+            requested_by_id=str(request.auth.id),
+            scheduled_for=payload.scheduled_for,
         )
     except Exception as exc:
         return error_response(exc)

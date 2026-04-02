@@ -6,6 +6,7 @@ from apps.monitoring.models import (
     ForecastRun,
     ModelVersion,
     Observation,
+    ScheduledMonitoringTask,
 )
 
 
@@ -150,3 +151,17 @@ def get_experiment_series_by_ids(series_ids):
     series_queryset = ExperimentSeries.objects.filter(id__in=series_ids)
     series_by_id = {str(series.id): series for series in series_queryset}
     return [series_by_id[series_id] for series_id in series_ids if series_id in series_by_id]
+
+
+def list_scheduled_monitoring_tasks(*, limit=20, requested_by_id=None):
+    queryset = ScheduledMonitoringTask.objects.all()
+    if requested_by_id is not None:
+        queryset = queryset.filter(requested_by_id=requested_by_id)
+    return queryset[:limit]
+
+
+def get_scheduled_monitoring_task(task_id, *, requested_by_id=None):
+    queryset = ScheduledMonitoringTask.objects.filter(id=task_id)
+    if requested_by_id is not None:
+        queryset = queryset.filter(requested_by_id=requested_by_id)
+    return queryset.first()

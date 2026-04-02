@@ -106,6 +106,7 @@ def train_model_async(request, payload: TrainModelPayload):
             weight_decay=payload.weight_decay,
             patience=payload.patience,
             seed=payload.seed,
+            scheduled_for=payload.scheduled_for,
         )
     except Exception as exc:
         return error_response(exc)
