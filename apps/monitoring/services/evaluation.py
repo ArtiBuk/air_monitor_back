@@ -105,7 +105,18 @@ class ForecastEvaluationService:
             actual_columns = [f"{target_name}_actual" for target_name in target_names]
             matched = merged.dropna(subset=actual_columns)
             if matched.empty:
-                raise ValueError("No actual observations found for forecast horizon.")
+                forecast_min_ts = predicted_frame["timestamp_utc"].min()
+                forecast_max_ts = predicted_frame["timestamp_utc"].max()
+                actual_max_ts = actual_frame["timestamp_utc"].max() if not actual_frame.empty else None
+                actual_max_ts_str = (
+                    actual_max_ts.isoformat().replace("+00:00", "Z") if actual_max_ts is not None else "no observations"
+                )
+                raise ValueError(
+                    "Нет фактических наблюдений для оценки прогноза. "
+                    f"Прогноз покрывает диапазон {forecast_min_ts.isoformat().replace('+00:00', 'Z')} .. "
+                    f"{forecast_max_ts.isoformat().replace('+00:00', 'Z')}, "
+                    f"последнее доступное фактическое наблюдение: {actual_max_ts_str}."
+                )
 
             y_pred = matched[[f"{target_name}_pred" for target_name in target_names]].to_numpy(dtype="float32")
             y_true = matched[actual_columns].to_numpy(dtype="float32")

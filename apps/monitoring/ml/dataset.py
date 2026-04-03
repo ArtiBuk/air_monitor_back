@@ -501,11 +501,8 @@ def split_by_time(
     if n < 3:
         raise ValueError("Not enough samples to split dataset")
 
-    train_end = max(1, int(n * train_ratio))
-    val_end = max(train_end + 1, int(n * (train_ratio + val_ratio)))
-
-    if val_end >= n:
-        val_end = n - 1
+    train_end = min(max(1, int(n * train_ratio)), n - 2)
+    val_end = min(max(train_end + 1, int(n * (train_ratio + val_ratio))), n - 1)
 
     result = {
         "X_train": dataset["X"][:train_end],

@@ -211,3 +211,7 @@ __marimo__/
 staticfiles/
 media/
 .env.local
+.deploy/
+!docker/env/
+docker/env/*.env
+!docker/env/*.deploy.example.env

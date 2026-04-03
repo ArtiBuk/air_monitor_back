@@ -1,34 +1,22 @@
 # air_monitor_back
 
-Backend магистерского проекта по мониторингу и краткосрочному прогнозированию качества воздуха в Норильском промышленном районе.
+Backend сервиса мониторинга и краткосрочного прогнозирования качества воздуха в Норильском промышленном районе.
 
-Проект собирает наблюдения из внешних источников, нормализует их в единый временной ряд, формирует датасеты для обучения, обучает модели прогноза, выполняет backtest и предоставляет API для исследовательской и прикладной работы.
+Проект отвечает за сбор наблюдений, нормализацию временных рядов, подготовку датасетов, обучение моделей, генерацию прогнозов, ретропроверку, оценку по фактическим данным и orchestration исследовательских прогонов.
 
-## Назначение проекта
+## Возможности
 
-Система решает две задачи:
+- аутентификация пользователей через JWT в `HttpOnly` cookie;
+- сбор и хранение наблюдений из внешних источников;
+- агрегация наблюдений в единый часовой ряд;
+- сборка `DatasetSnapshot` для воспроизводимого обучения;
+- обучение и версионирование моделей прогноза;
+- генерация прогнозов и исторический `backtest`;
+- оценка прогноза по фактическим наблюдениям;
+- запуск одиночных экспериментов и исследовательских серий;
+- синхронные, фоновые и отложенные сценарии через Celery.
 
-1. Инженерную.
-   Предоставить backend для веб-приложения с аутентификацией, API, очередями задач, хранением данных и воспроизводимым ML-пайплайном.
-
-2. Исследовательскую.
-   Дать основу для сравнения моделей, признаков, горизонтов прогноза и серий экспериментов в рамках магистерской работы.
-
-## Текущий функционал
-
-- регистрация, логин, refresh и logout через JWT в `HttpOnly` cookie;
-- хранение пользователей и получение текущего профиля;
-- сбор наблюдений по качеству воздуха из внешних источников;
-- хранение и агрегация наблюдений в PostgreSQL;
-- построение `DatasetSnapshot` из наблюдений;
-- обучение и версионирование моделей;
-- генерация прогноза на выбранный горизонт;
-- backtest от исторической точки отсечения;
-- оценка прогноза по фактическим данным;
-- сравнение моделей, прогнозов, оценок, отдельных экспериментов и серий экспериментов;
-- sync и async API-сценарии через Django Ninja и Celery.
-
-## Технологический стек
+## Технологии
 
 - Python 3.12
 - Django 5
@@ -44,364 +32,165 @@ Backend магистерского проекта по мониторингу и
 - pytest
 - Ruff
 
-## Архитектура
+## Структура проекта
 
-### Приложения
+```text
+apps/
+  authentication/   login, register, refresh, logout
+  common/           base models, middleware, health probes
+  monitoring/       observations, datasets, models, forecasts, experiments
+  users/            user model and profile API
+config/             Django settings, URLs, Celery bootstrap
+docker/             dev и deploy compose-слой, Dockerfile, entrypoints
+```
 
-- `apps/authentication`
-  Аутентификация, работа с JWT и cookie-based auth flow.
-- `apps/users`
-  Кастомный пользователь и API текущего профиля.
-- `apps/monitoring`
-  Основная предметная область: наблюдения, датасеты, модели, прогнозы, оценки и эксперименты.
-- `apps/common`
-  Общие базовые модели, middleware и health probes.
-- `config`
-  Настройки Django, Celery bootstrap, корневой API и URL-маршруты.
+Ключевая предметная логика живёт в `apps/monitoring`:
 
-### Принципы структуры
+- `api/routers` и `api/schemas` содержат транспортный слой;
+- `services` описывает use-case orchestration;
+- `selectors` отвечает за чтение и подготовку querysets;
+- `ml` содержит подготовку датасета, train и inference;
+- `tasks.py` выносит долгие операции в Celery.
 
-Внутри приложений используются такие слои:
+## Основные сущности
 
-- `api`
-  Transport-слой: роутеры, схемы и API-утилиты.
-- `services`
-  Use-case логика и orchestration.
-- `selectors`
-  Слой чтения и подготовки querysets.
-- `models.py`, `managers.py`, `querysets.py`
-  ORM и доменная модель.
-- `tests`
-  Тесты конкретного приложения: `conftest.py`, фабрики, API- и service-тесты.
+- `Observation` — нормализованное наблюдение из внешнего источника.
+- `DatasetSnapshot` — зафиксированный срез данных для обучения.
+- `ModelVersion` — обученная версия модели с конфигурацией и метриками.
+- `ForecastRun` — один запуск генерации прогноза.
+- `ForecastEvaluation` — оценка прогноза по фактическим данным.
+- `ExperimentRun` — полный исследовательский прогон.
+- `ExperimentSeries` — группа связанных экспериментальных запусков.
 
-### Структура `apps/monitoring`
+## Что важно в архитектуре
 
-В `monitoring` код разделён по ролям:
-
-- `api/routers`
-  Группы endpoint'ов: наблюдения, датасеты, модели, прогнозы, эксперименты, задачи.
-- `api/schemas`
-  Отдельные схемы для каждого предметного блока.
-- `providers`
-  Источники внешних данных.
-- `ingestion`
-  Типы и утилиты нормализации входящих наблюдений.
-- `services`
-  Основной orchestration: ingestion, training, forecast, evaluation, experiments.
-- `ml`
-  Работа с датасетом, обучением и inference.
-- `tasks.py`
-  Celery tasks для долгих операций.
-
-## Доменная модель
-
-### Observation
-
-Нормализованное наблюдение из внешнего источника.
-
-### DatasetSnapshot
-
-Снимок датасета для обучения:
-
-- окно входа `input_len_hours`;
-- горизонт прогноза `forecast_horizon_hours`;
-- признаки и целевые переменные;
-- metadata о сборке датасета;
-- бинарный `npz` payload со split-данными.
-
-### ModelVersion
-
-Версия обученной модели:
-
-- привязка к датасету;
-- training config;
-- feature и target names;
-- train/test метрики;
-- история обучения;
-- checkpoint модели;
-- статус и флаг активной версии.
-
-### ForecastRun
-
-Один запуск генерации прогноза.
-
-### ForecastEvaluation
-
-Оценка качества конкретного прогноза по фактическим наблюдениям.
-
-### ExperimentRun
-
-Один полный исследовательский запуск:
-
-- сбор датасета;
-- обучение модели;
-- optional backtest;
-- optional evaluation;
-- конфигурация запуска;
-- компактная сводка результата.
-
-### ExperimentSeries
-
-Группа `ExperimentRun` для одной исследовательской кампании.
-
-## Источники истины в данных и метриках
-
-Чтобы данные и результаты не дублировались в нескольких местах, в проекте приняты такие правила:
-
-- структура датасета хранится в `DatasetSnapshot`;
-- training config и train/test метрики хранятся в `ModelVersion`;
-- backtest и evaluation метрики хранятся в `ForecastEvaluation`;
-- `ExperimentRun` хранит конфигурацию orchestration и краткую сводку;
-- `ExperimentSeries` хранит общую конфигурацию серии и агрегированную summary.
-
-Это значит, что полные train-метрики нужно читать из `ModelVersion.metrics`, а полные backtest-метрики из `ForecastEvaluation.metrics`.
+- `DatasetSnapshot` используется как источник истины для состава признаков, целей и параметров временного окна.
+- `ModelVersion` хранит training config, историю обучения и train/test метрики.
+- `ForecastEvaluation` хранит метрики ретропроверки и оценки по факту.
+- Все `POST .../async` endpoint'ы умеют работать либо сразу через очередь, либо отложенно через поле `scheduled_for`.
+- Генерация прогноза по умолчанию опирается на активную готовую модель.
+- Оценка прогноза по факту возможна только после того, как в системе появились наблюдения на весь горизонт прогноза.
 
 ## API
 
 Swagger:
 
 ```text
-http://localhost:8000/api/docs
+http://127.0.0.1:8000/api/docs
 ```
 
-### Auth
+Основные группы endpoint'ов:
 
 - `POST /api/auth/register`
 - `POST /api/auth/login`
 - `POST /api/auth/refresh`
 - `POST /api/auth/logout`
-
-### Users
-
 - `GET /api/users/me`
-
-### Monitoring
-
-Наблюдения:
-
-- `GET /api/monitoring/observations`
-- `POST /api/monitoring/observations/collect`
-- `POST /api/monitoring/observations/collect/async`
-
-Датасеты:
-
-- `GET /api/monitoring/datasets`
-- `GET /api/monitoring/datasets/{dataset_snapshot_id}`
-- `POST /api/monitoring/datasets/build`
-- `POST /api/monitoring/datasets/build/async`
-
-Модели:
-
-- `GET /api/monitoring/models`
-- `GET /api/monitoring/models/active`
-- `GET /api/monitoring/models/{model_version_id}`
-- `GET /api/monitoring/models/compare`
-- `GET /api/monitoring/models/leaderboard`
-- `POST /api/monitoring/models/train`
-- `POST /api/monitoring/models/train/async`
-
-Прогнозы:
-
-- `GET /api/monitoring/forecasts`
-- `GET /api/monitoring/forecasts/latest`
-- `GET /api/monitoring/forecasts/{forecast_run_id}`
-- `GET /api/monitoring/forecasts/compare`
-- `POST /api/monitoring/forecasts/generate`
-- `POST /api/monitoring/forecasts/generate/async`
-- `POST /api/monitoring/forecasts/backtest`
-
-Оценки прогнозов:
-
-- `GET /api/monitoring/forecasts/evaluations`
-- `GET /api/monitoring/forecasts/evaluations/compare`
-- `GET /api/monitoring/forecasts/{forecast_run_id}/evaluation`
-- `POST /api/monitoring/forecasts/{forecast_run_id}/evaluate`
-
-Эксперименты:
-
-- `GET /api/monitoring/experiments`
-- `GET /api/monitoring/experiments/{experiment_run_id}`
-- `GET /api/monitoring/experiments/compare`
-- `POST /api/monitoring/experiments/run`
-- `POST /api/monitoring/experiments/run/async`
-
-Серии экспериментов:
-
-- `GET /api/monitoring/experiment-series`
-- `GET /api/monitoring/experiment-series/{series_id}`
-- `GET /api/monitoring/experiment-series/{series_id}/runs`
-- `GET /api/monitoring/experiment-series/{series_id}/report`
-- `GET /api/monitoring/experiment-series/compare`
-- `GET /api/monitoring/experiment-series/reports/compare`
-- `POST /api/monitoring/experiment-series`
-
-Статус фоновой задачи:
-
+- `GET|POST /api/monitoring/observations...`
+- `GET|POST /api/monitoring/datasets...`
+- `GET|POST /api/monitoring/models...`
+- `GET|POST /api/monitoring/forecasts...`
+- `GET|POST /api/monitoring/experiments...`
+- `GET|POST /api/monitoring/experiment-series...`
 - `GET /api/monitoring/tasks/{task_id}`
-
-Запланированные задачи:
-
-- `GET /api/monitoring/scheduled-tasks`
-- `GET /api/monitoring/scheduled-tasks/{scheduled_task_id}`
-- `POST /api/monitoring/scheduled-tasks/{scheduled_task_id}/cancel`
-
-## Отложенные задачи
-
-Все `POST .../async` endpoint'ы поддерживают опциональное поле `scheduled_for`.
-
-- если `scheduled_for` не передан, задача сразу ставится в очередь Celery;
-- если `scheduled_for` передан, backend создаёт `ScheduledMonitoringTask`, сохраняет payload и планирует запуск на указанное время;
-- отменить можно только задачу в статусе `scheduled`.
-
-Пример отложенного запуска:
-
-```json
-{
-  "input_len_hours": 72,
-  "forecast_horizon_hours": 24,
-  "scheduled_for": "2026-04-03T06:00:00Z"
-}
-```
-
-## Контракты `experiments`
-
-Запуск эксперимента использует вложенные блоки `dataset`, `training` и `backtest`.
-
-Пример:
-
-```json
-{
-  "name": "baseline-exp",
-  "series_id": "uuid-or-null",
-  "dataset": {
-    "input_len_hours": 72,
-    "forecast_horizon_hours": 24,
-    "feature_columns": ["plume_pm25", "plume_pm10"],
-    "target_columns": ["plume_pm25"]
-  },
-  "training": {
-    "epochs": 50,
-    "batch_size": 16,
-    "lr": 0.001,
-    "weight_decay": 0.0001,
-    "patience": 5,
-    "seed": 42
-  },
-  "backtest": {
-    "generated_from_timestamp_utc": "2026-03-05T23:00:00Z"
-  }
-}
-```
-
-Конфигурация серии экспериментов хранится как typed-структура и тоже может содержать `dataset`, `training`, `backtest` и дополнительную metadata.
+- `GET|POST /api/monitoring/scheduled-tasks...`
 
 ## Локальный запуск
 
-### Требования
-
-- Docker
-- Docker Compose
-- Python 3.12 и локальная `.venv` для запуска тестов и линтера
-
-### Основные команды
+### Вариант по умолчанию: Docker dev-контур
 
 ```bash
-make help
-make build
 make up
-make ps
-make logs
 make migrate
-make down
+make create-superuser
 ```
 
-### Команды разработки
+После запуска доступны:
+
+- backend: `http://127.0.0.1:8000`
+- Swagger: `http://127.0.0.1:8000/api/docs`
+
+Dev-контур использует bind mounts, поэтому код backend подхватывается без пересборки `web` контейнера. `worker` и `beat` при изменениях Python-кода обычно нужно перезапустить вручную.
+
+### Локальная установка без Docker
+
+```bash
+python3.12 -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+```
+
+Этот вариант требует отдельно поднятых PostgreSQL и Redis и обычно нужен только для запуска тестов, линтера или точечной отладки.
+
+## Основные команды
+
+### Разработка
+
+```bash
+make up
+make down
+make logs
+make shell-web
+make migrate
+make makemigrations
+make create-superuser
+```
+
+### Проверки качества
 
 ```bash
 make lint
 make format
 make pytest
-make pytest-create-db
 make check
 ```
 
-`make check` запускает базовую проверку проекта: линтер и тесты.
+## Deploy
 
-## Docker-стек
+Deploy-контур поднимает backend без bind mounts, публикует `web` только на `127.0.0.1:${APP_PORT}` и рассчитан на запуск вместе с frontend reverse proxy.
 
-В dev-стеке используются сервисы:
-
-- `web`
-- `worker`
-- `beat`
-- `postgres`
-- `redis`
-
-Что важно:
-
-- `make up` не делает принудительную пересборку;
-- пересборка вынесена в `make build` и `make rebuild`;
-- код примонтирован в контейнеры через bind mounts;
-- `web` работает в dev-режиме с автоматическим подхватом изменений Python-кода;
-- `worker` и `beat` при изменении кода нужно перезапускать вручную.
-
-## Аутентификация
-
-- access и refresh токены хранятся в `HttpOnly` cookie;
-- защищённые ручки умеют читать токены и из cookie, и из `Authorization: Bearer ...`;
-- `refresh` и `logout` могут отрабатывать с пустым JSON body, если refresh-токен уже есть в cookie.
-
-## Async-сценарии
-
-Через Celery вынесены долгие операции:
-
-- сбор наблюдений;
-- построение датасета;
-- обучение модели;
-- генерация прогноза;
-- полный `ExperimentRun`.
-
-Статус фоновой задачи запрашивается через:
-
-```text
-GET /api/monitoring/tasks/{task_id}
-```
-
-## Тестирование
-
-Тесты организованы по приложениям. Для `monitoring` есть:
-
-- API-тесты;
-- service-тесты;
-- фабрики и фикстуры в `apps/monitoring/tests`.
-
-Тестовая база:
-
-- SQLite в директории `.testdb/`;
-- `pytest` запускается с `--reuse-db`;
-- Celery в тестах переведён на in-memory broker/backend.
-
-## Качество кода
-
-- `ruff` используется для lint и format;
-- локальные git hooks лежат в `.githooks`;
-- подключение hooks выполняется командой `make hooks-install`.
-
-## Management commands
+Основные команды:
 
 ```bash
-python manage.py collect_observations
-python manage.py generate_forecast
+make deploy-env-init
+make deploy-build
+make deploy-up
+make deploy-up-all FRONTEND_DIR=../air_monitor_front
+make deploy-down-all
 ```
 
-## Текущее состояние
+Подробная инструкция для сервера вынесена в [DEPLOY.md](DEPLOY.md).
 
-На текущем этапе backend закрывает основную инженерную и исследовательскую часть:
+## Конфигурация deploy
 
-- ingestion наблюдений;
-- подготовку датасета;
-- обучение и хранение моделей;
-- прогноз;
-- backtest и evaluation;
-- отдельные эксперименты и серии экспериментов.
-  
+Файлы конфигурации создаются из шаблонов:
+
+- `docker/env/app.deploy.example.env`
+- `docker/env/db.deploy.example.env`
+
+Минимум, что нужно заполнить перед deploy:
+
+- `DJANGO_SECRET_KEY`
+- `MYCITYAIR_TOKEN`
+- `DJANGO_SUPERUSER_EMAIL`
+- `DJANGO_SUPERUSER_PASSWORD`
+
+Для работы через белый IP также проверь:
+
+- `DJANGO_ALLOWED_HOSTS`
+- `CSRF_TRUSTED_ORIGINS`
+
+## Технические ограничения предметной области
+
+- Для сборки датасета должно хватать часовых наблюдений под выбранные `input_len_hours` и `forecast_horizon_hours`.
+- Модели со статусами `training` и `failed` не подходят для прогноза.
+- Если в базе нет активной готовой модели, hourly forecast пропускается.
+- Оценка прогноза по факту не выполняется, пока фактические наблюдения не дошли до конца прогнозного горизонта.
+
+## Связанные репозитории
+
+Frontend интерфейс живёт в отдельном репозитории `air_monitor_front`.
+
+## Статус
+
+Проект ориентирован на магистерскую работу и исследовательские сценарии. Кодовая база рассчитана на локальный стенд и серверный Docker deploy, а не на публикацию как универсальный reusable package.

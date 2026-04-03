@@ -26,9 +26,15 @@ def env_int(name: str, default: int) -> int:
     return int(raw)
 
 
+def env_list(name: str, default: str = "") -> list[str]:
+    raw = env(name, default) or ""
+    return [item.strip() for item in raw.split(",") if item.strip()]
+
+
 SECRET_KEY = env("DJANGO_SECRET_KEY", "django-insecure-air-monitor-dev-key")
 DEBUG = env_bool("DJANGO_DEBUG", False)
-ALLOWED_HOSTS = [host.strip() for host in env("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if host.strip()]
+ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1")
+CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS", "http://localhost,http://127.0.0.1")
 
 LANGUAGE_CODE = "ru-ru"
 TIME_ZONE = env("DJANGO_TIME_ZONE", "Asia/Krasnoyarsk")

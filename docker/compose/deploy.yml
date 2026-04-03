@@ -1,0 +1,26 @@
+services:
+  web:
+    env_file:
+      - ${APP_ENV_FILE:-../env/app.deploy.env}
+      - ${DB_ENV_FILE:-../env/db.deploy.env}
+    ports:
+      - "127.0.0.1:${APP_PORT:-8000}:8000"
+
+  worker:
+    env_file:
+      - ${APP_ENV_FILE:-../env/app.deploy.env}
+      - ${DB_ENV_FILE:-../env/db.deploy.env}
+
+  beat:
+    env_file:
+      - ${APP_ENV_FILE:-../env/app.deploy.env}
+      - ${DB_ENV_FILE:-../env/db.deploy.env}
+
+  postgres:
+    env_file:
+      - ${DB_ENV_FILE:-../env/db.deploy.env}
+
+networks:
+  air_monitor_network:
+    name: ${AIR_MONITOR_NETWORK_NAME:-air-monitor-network}
+    external: true

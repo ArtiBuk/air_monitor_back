@@ -6,9 +6,7 @@ services:
     restart: unless-stopped
     shm_size: 256mb
     env_file:
-      - ../env/db.env
-    ports:
-      - "${POSTGRES_EXPOSE_PORT:-5432}:5432"
+      - ${DB_ENV_FILE:-../env/db.env}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -25,8 +23,6 @@ services:
     hostname: air-monitor-redis
     restart: unless-stopped
     command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
-    ports:
-      - "${REDIS_EXPOSE_PORT:-6379}:6379"
     volumes:
       - redis_data:/data
     healthcheck:
