@@ -57,9 +57,12 @@ def validate_dataset_request(
 
     minimum_row_count = input_len_hours + forecast_horizon_hours + 2
     if master_row_count < minimum_row_count:
+        max_input_len_hours = max(master_row_count - forecast_horizon_hours - 2, 0)
         raise ValueError(
             "Недостаточно наблюдений для построения датасета: "
-            f"нужно минимум {minimum_row_count} часовых точек, доступно {master_row_count}."
+            f"нужно минимум {minimum_row_count} часовых точек, доступно {master_row_count}. "
+            f"При текущем горизонте {forecast_horizon_hours} ч максимально допустимое input_len_hours = {max_input_len_hours}. "
+            "Для конфигурации 72/24 обычно нужно собрать хотя бы 98-120 часовых точек истории."
         )
 
 

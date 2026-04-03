@@ -156,7 +156,16 @@ def train_model_version(
 @shared_task(name="apps.monitoring.tasks.generate_hourly_forecast")
 def generate_hourly_forecast():
     logger.info("celery task started task=generate_hourly_forecast")
-    result = ForecastService().generate()
+    try:
+        result = ForecastService().generate()
+    except ValueError as exc:
+        if str(exc) == "No active trained model found in database.":
+            logger.warning("celery task skipped task=generate_hourly_forecast reason=%s", exc)
+            return {
+                "status": "skipped",
+                "detail": str(exc),
+            }
+        raise
     logger.info("celery task completed task=generate_hourly_forecast run_id=%s", result.run_id)
     return {
         "run_id": result.run_id,
