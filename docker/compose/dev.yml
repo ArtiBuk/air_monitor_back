@@ -1,0 +1,32 @@
+services:
+  web:
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    volumes:
+      - ../../apps:/app/apps
+      - ../../config:/app/config
+      - ../../manage.py:/app/manage.py
+
+  worker:
+    volumes:
+      - ../../apps:/app/apps
+      - ../../config:/app/config
+      - ../../manage.py:/app/manage.py
+
+  beat:
+    volumes:
+      - ../../apps:/app/apps
+      - ../../config:/app/config
+      - ../../manage.py:/app/manage.py
+
+  postgres:
+    ports:
+      - "${POSTGRES_EXPOSE_PORT:-5432}:5432"
+
+  redis:
+    ports:
+      - "${REDIS_EXPOSE_PORT:-6379}:6379"
+
+networks:
+  air_monitor_network:
+    driver: bridge

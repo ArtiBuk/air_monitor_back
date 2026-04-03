@@ -4,7 +4,3 @@ volumes:
   static_data:
   media_data:
   celery_run:
-
-networks:
-  air_monitor_network:
-    driver: bridge
