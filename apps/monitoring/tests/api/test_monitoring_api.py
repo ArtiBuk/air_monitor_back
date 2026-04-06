@@ -44,6 +44,40 @@ def test_collect_observations_persists_records_and_exposes_them(
     assert len(list_response.json()) == 2
 
 
+def test_monitoring_overview_exposes_real_counts_and_collection_config(
+    authenticated_client,
+    dataset_snapshot_factory,
+    model_version_factory,
+    forecast_run_factory,
+    experiment_series_factory,
+    experiment_run_factory,
+    reference_observations_factory,
+):
+    reference_observations_factory(hours=24)
+    dataset = dataset_snapshot_factory()
+    model = model_version_factory(dataset=dataset)
+    forecast = forecast_run_factory(model_version=model)
+    series = experiment_series_factory()
+    experiment_run_factory(series=series, dataset_snapshot=dataset, model_version=model, forecast_run=forecast)
+
+    response = authenticated_client.get("/api/monitoring/overview")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["counts"]["observations"] > 0
+    assert payload["counts"]["datasets"] == 1
+    assert payload["counts"]["models"] == 1
+    assert payload["counts"]["forecasts"] == 1
+    assert payload["counts"]["experiments"] == 1
+    assert payload["counts"]["series"] == 1
+    assert payload["counts"]["scheduled_tasks"] == 0
+    assert payload["automatic_collection"]["lookback_hours"] == 48
+    assert payload["automatic_collection"]["interval"] == "Interval1H"
+    assert payload["automatic_collection"]["window_hours"] == 1
+    assert payload["automatic_collection"]["schedule_minute"] == 5
+    assert payload["automatic_collection"]["enabled_sources"] == ["mycityair", "plumelabs"]
+
+
 @patch("apps.monitoring.services.observations.PlumeCollector.collect")
 @patch("apps.monitoring.services.observations.MyCityAirCollector.collect")
 def test_collect_observations_async_exposes_task_status(

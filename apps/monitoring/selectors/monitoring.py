@@ -1,3 +1,5 @@
+from django.conf import settings
+
 from apps.monitoring.models import (
     DatasetSnapshot,
     ExperimentRun,
@@ -165,3 +167,24 @@ def get_scheduled_monitoring_task(task_id, *, requested_by_id=None):
     if requested_by_id is not None:
         queryset = queryset.filter(requested_by_id=requested_by_id)
     return queryset.first()
+
+
+def get_monitoring_overview():
+    return {
+        "counts": {
+            "observations": Observation.objects.count(),
+            "datasets": DatasetSnapshot.objects.count(),
+            "models": ModelVersion.objects.count(),
+            "forecasts": ForecastRun.objects.count(),
+            "experiments": ExperimentRun.objects.count(),
+            "series": ExperimentSeries.objects.count(),
+            "scheduled_tasks": ScheduledMonitoringTask.objects.count(),
+        },
+        "automatic_collection": {
+            "lookback_hours": settings.MONITORING_COLLECTION_LOOKBACK_HOURS,
+            "interval": settings.MONITORING_INTERVAL,
+            "window_hours": settings.MONITORING_WINDOW_HOURS,
+            "schedule_minute": 5,
+            "enabled_sources": ["mycityair", "plumelabs"],
+        },
+    }
