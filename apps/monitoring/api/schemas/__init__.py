@@ -20,8 +20,10 @@ from .forecasts import (
 )
 from .models import ModelLeaderboardEntrySchema, ModelVersionSchema, TrainModelPayload
 from .observations import CollectObservationsPayload, ObservationSchema, ObservationSyncSchema
+from .overview import AutomaticCollectionSchema, MonitoringOverviewCountsSchema, MonitoringOverviewSchema
 
 __all__ = (
+    "AutomaticCollectionSchema",
     "AsyncTaskLaunchSchema",
     "AsyncTaskStatusSchema",
     "BuildDatasetPayload",
@@ -42,6 +44,8 @@ __all__ = (
     "ForecastRunSchema",
     "MessageSchema",
     "ModelLeaderboardEntrySchema",
+    "MonitoringOverviewCountsSchema",
+    "MonitoringOverviewSchema",
     "ModelVersionSchema",
     "ObservationSchema",
     "ObservationSyncSchema",
