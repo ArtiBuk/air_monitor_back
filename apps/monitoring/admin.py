@@ -31,7 +31,9 @@ class MonitoringAdminMixin(admin.ModelAdmin):
     def _pretty_json(value):
         if value in (None, "", {}, []):
             return "-"
-        return format_html("<pre style='white-space: pre-wrap; margin: 0'>{}</pre>", json.dumps(value, ensure_ascii=False, indent=2))
+        return format_html(
+            "<pre style='white-space: pre-wrap; margin: 0'>{}</pre>", json.dumps(value, ensure_ascii=False, indent=2)
+        )
 
 
 @admin.action(description="Сделать выбранную готовую модель активной")
@@ -42,7 +44,9 @@ def make_model_active(modeladmin, request, queryset):
 
     model = queryset.first()
     if model.status != ModelVersion.Status.READY:
-        modeladmin.message_user(request, "Активной можно сделать только модель со статусом ready.", level=messages.ERROR)
+        modeladmin.message_user(
+            request, "Активной можно сделать только модель со статусом ready.", level=messages.ERROR
+        )
         return
 
     with transaction.atomic():
@@ -284,8 +288,22 @@ class ExperimentRunAdmin(MonitoringAdminMixin):
     )
     list_filter = ("status", "input_len_hours", "forecast_horizon_hours")
     search_fields = ("id", "name", "series__name", "error_message")
-    autocomplete_fields = ("requested_by", "series", "dataset_snapshot", "model_version", "forecast_run", "forecast_evaluation")
-    readonly_fields = ("id", "created_at", "updated_at", "training_config_preview", "backtest_config_preview", "summary_preview")
+    autocomplete_fields = (
+        "requested_by",
+        "series",
+        "dataset_snapshot",
+        "model_version",
+        "forecast_run",
+        "forecast_evaluation",
+    )
+    readonly_fields = (
+        "id",
+        "created_at",
+        "updated_at",
+        "training_config_preview",
+        "backtest_config_preview",
+        "summary_preview",
+    )
 
     @admin.display(description="Training config preview")
     def training_config_preview(self, obj):

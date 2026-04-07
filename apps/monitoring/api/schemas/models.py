@@ -40,14 +40,18 @@ class ModelVersionSchema(ModelSchema):
 
 
 class ModelLeaderboardEntrySchema(Schema):
+    rank: int
     model_version_id: UUID
     model_name: str
     evaluation_count: int
-    avg_overall_rmse: float
-    avg_overall_mae: float
-    avg_macro_mape: float
-    avg_coverage_ratio: float
+    avg_overall_rmse: float | None = None
+    avg_overall_mae: float | None = None
+    avg_macro_mape: float | None = None
+    avg_coverage_ratio: float | None = None
     forecast_horizon_hours: int
     input_len_hours: int
     is_active: bool
+    dataset_sample_count: int
+    dataset_master_row_count: int
+    metric_source: str
     latest_evaluated_at_utc: datetime | None = None

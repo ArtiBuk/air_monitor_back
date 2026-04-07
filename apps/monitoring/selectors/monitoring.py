@@ -10,6 +10,7 @@ from apps.monitoring.models import (
     Observation,
     ScheduledMonitoringTask,
 )
+from apps.monitoring.services.model_selection import ModelSelectionService
 
 
 def list_observations(*, metric=None, source=None, start=None, finish=None, limit=100):
@@ -76,7 +77,7 @@ def list_model_versions(limit=10):
 
 
 def get_active_model_version():
-    return ModelVersion.objects.filter(is_active=True, status=ModelVersion.Status.READY).first()
+    return ModelSelectionService().ensure_best_model_is_active()
 
 
 def get_model_version(model_version_id):
