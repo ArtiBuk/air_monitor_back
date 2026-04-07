@@ -8,7 +8,6 @@ from ...selectors import (
     get_dataset_snapshot,
     get_model_version,
     get_model_versions_by_ids,
-    list_forecast_evaluations,
     list_model_versions,
 )
 from ...services.reporting import build_model_leaderboard
@@ -46,12 +45,11 @@ def compare_model_versions(request, ids: list[str] = Query(...)):
 
 @router.get("/models/leaderboard", response={200: list[ModelLeaderboardEntrySchema], 400: MessageSchema})
 def model_leaderboard(request, metric: str = Query("overall_rmse"), limit: int = Query(10, ge=1, le=50)):
-    """Возвращает лидерборд моделей по метрикам backtest."""
+    """Возвращает лидерборд готовых моделей по backtest-метрикам или training fallback."""
     if metric not in {"overall_rmse", "overall_mae", "macro_mape"}:
         return error_response(ValueError("metric must be one of: overall_rmse, overall_mae, macro_mape."))
 
-    evaluations = list_forecast_evaluations(limit=500)
-    leaderboard = build_model_leaderboard(evaluations=evaluations, metric=metric)
+    leaderboard = build_model_leaderboard(metric=metric)
     return Status(200, leaderboard[:limit])
 
 

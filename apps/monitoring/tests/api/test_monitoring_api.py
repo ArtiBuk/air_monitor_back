@@ -314,6 +314,46 @@ def test_monitoring_read_endpoints_expose_datasets_and_models(
     assert active_model_response.json()["is_active"] is True
 
 
+def test_active_model_endpoint_returns_best_ready_model(
+    authenticated_client,
+    dataset_snapshot_factory,
+    model_version_factory,
+    forecast_run_factory,
+    forecast_evaluation_factory,
+):
+    weaker_model = model_version_factory(
+        dataset=dataset_snapshot_factory(sample_count=120, master_row_count=220),
+        name="older-model",
+        is_active=True,
+        metrics={"summary": {"overall_rmse": 1.9, "overall_mae": 1.15, "macro_mape": 0.31}},
+    )
+    better_model = model_version_factory(
+        dataset=dataset_snapshot_factory(sample_count=180, master_row_count=300),
+        name="best-model",
+        is_active=False,
+        metrics={"summary": {"overall_rmse": 1.4, "overall_mae": 0.86, "macro_mape": 0.24}},
+    )
+    forecast_evaluation_factory(
+        forecast_run=forecast_run_factory(model_version=weaker_model),
+        metrics={"summary": {"overall_rmse": 1.8, "overall_mae": 1.0, "macro_mape": 0.29}},
+    )
+    forecast_evaluation_factory(
+        forecast_run=forecast_run_factory(model_version=better_model),
+        metrics={"summary": {"overall_rmse": 1.05, "overall_mae": 0.67, "macro_mape": 0.18}},
+    )
+
+    response = authenticated_client.get("/api/monitoring/models/active")
+
+    weaker_model.refresh_from_db()
+    better_model.refresh_from_db()
+
+    assert response.status_code == 200
+    assert response.json()["id"] == str(better_model.id)
+    assert response.json()["is_active"] is True
+    assert weaker_model.is_active is False
+    assert better_model.is_active is True
+
+
 def test_monitoring_detail_endpoints_return_specific_entities(
     authenticated_client, dataset_snapshot_factory, model_version_factory
 ):

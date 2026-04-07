@@ -3,9 +3,10 @@ from dataclasses import dataclass
 
 from django.db import transaction
 
-from apps.monitoring.models import ForecastRecord, ForecastRun, ModelVersion
+from apps.monitoring.models import ForecastRecord, ForecastRun
 
 from .dataframes import build_master_dataset_from_db
+from .model_selection import ModelSelectionService
 from .utils import parse_utc_datetime
 
 logger = logging.getLogger(__name__)
@@ -35,11 +36,7 @@ class ForecastService:
 
         from apps.monitoring.ml import AirForecaster
 
-        model_version = model_version or (
-            ModelVersion.objects.filter(is_active=True, status=ModelVersion.Status.READY)
-            .order_by("-created_at")
-            .first()
-        )
+        model_version = model_version or ModelSelectionService().ensure_best_model_is_active()
         if model_version is None or not model_version.checkpoint_blob:
             raise ValueError("No active trained model found in database.")
 

@@ -4,6 +4,7 @@ from io import BytesIO
 from apps.monitoring.models import DatasetSnapshot, ModelVersion
 
 from .dataframes import build_master_dataset_from_db
+from .model_selection import ModelSelectionService
 from .validation import normalize_feature_columns, normalize_target_columns, validate_dataset_request
 
 logger = logging.getLogger(__name__)
@@ -186,12 +187,11 @@ class ModelLifecycleService:
                 buffer,
             )
 
-            ModelVersion.objects.filter(is_active=True).update(is_active=False)
             model_version.status = ModelVersion.Status.READY
             model_version.metrics = metrics
             model_version.history = artifacts.history
             model_version.checkpoint_blob = buffer.getvalue()
-            model_version.is_active = True
+            model_version.is_active = False
             model_version.save(
                 update_fields=[
                     "status",
@@ -202,6 +202,8 @@ class ModelLifecycleService:
                     "updated_at",
                 ]
             )
+            best_model = ModelSelectionService().ensure_best_model_is_active()
+            model_version.is_active = best_model is not None and best_model.id == model_version.id
         except Exception as exc:
             model_version.status = ModelVersion.Status.FAILED
             model_version.error_message = str(exc)
