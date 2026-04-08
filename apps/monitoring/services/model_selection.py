@@ -31,9 +31,7 @@ def _metric_sort_value(value: float | None) -> float:
 
 def _list_ready_models() -> list[ModelVersion]:
     return list(
-        ModelVersion.objects.filter(status=ModelVersion.Status.READY)
-        .select_related("dataset")
-        .order_by("-created_at")
+        ModelVersion.objects.filter(status=ModelVersion.Status.READY).select_related("dataset").order_by("-created_at")
     )
 
 
@@ -160,8 +158,7 @@ def build_model_leaderboard(*, metric: str = "overall_rmse") -> list[dict]:
     model_ids = [str(model.id) for model in models]
     evaluation_aggregates = _build_evaluation_aggregates(model_ids)
     leaderboard = [
-        _build_ranking_entry(model, evaluation_aggregate=evaluation_aggregates.get(str(model.id)))
-        for model in models
+        _build_ranking_entry(model, evaluation_aggregate=evaluation_aggregates.get(str(model.id))) for model in models
     ]
     leaderboard.sort(key=lambda item: _leaderboard_sort_key(metric, item))
 

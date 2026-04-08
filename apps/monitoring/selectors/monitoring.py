@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.db.models import Avg, Max, Min
 
 from apps.monitoring.models import (
     DatasetSnapshot,
@@ -20,6 +21,63 @@ def list_observations(*, metric=None, source=None, start=None, finish=None, limi
     if source:
         queryset = queryset.from_source(source)
     return queryset[:limit]
+
+
+def get_air_map_snapshot():
+    station_queryset = Observation.objects.filter(
+        source="mycityair",
+        metric="aqi",
+        lat__isnull=False,
+        lon__isnull=False,
+    )
+    latest_station_timestamp = (
+        station_queryset.order_by("-observed_at_utc").values_list("observed_at_utc", flat=True).first()
+    )
+    station_points = (
+        station_queryset.filter(observed_at_utc=latest_station_timestamp).order_by("station_name", "station_id")
+        if latest_station_timestamp
+        else Observation.objects.none()
+    )
+
+    city_queryset = Observation.objects.filter(source="plumelabs")
+    latest_city_timestamp = city_queryset.order_by("-observed_at_utc").values_list("observed_at_utc", flat=True).first()
+    city_metrics = (
+        city_queryset.filter(observed_at_utc=latest_city_timestamp).order_by("metric")
+        if latest_city_timestamp
+        else Observation.objects.none()
+    )
+
+    bounds = station_points.aggregate(
+        min_lat=Min("lat"),
+        max_lat=Max("lat"),
+        min_lon=Min("lon"),
+        max_lon=Max("lon"),
+        center_lat=Avg("lat"),
+        center_lon=Avg("lon"),
+    )
+    has_bounds = bounds["center_lat"] is not None and bounds["center_lon"] is not None
+
+    return {
+        "summary": {
+            "latest_station_timestamp": latest_station_timestamp,
+            "latest_city_timestamp": latest_city_timestamp,
+            "station_count": station_points.count(),
+            "city_metric_count": city_metrics.count(),
+            "sources": ["mycityair", "plumelabs"],
+        },
+        "bounds": {
+            "min_lat": bounds["min_lat"],
+            "max_lat": bounds["max_lat"],
+            "min_lon": bounds["min_lon"],
+            "max_lon": bounds["max_lon"],
+            "center_lat": bounds["center_lat"],
+            "center_lon": bounds["center_lon"],
+        }
+        if has_bounds
+        else None,
+        "station_points": list(station_points),
+        "city_metrics": list(city_metrics),
+    }
 
 
 def list_forecast_runs(limit=10):
