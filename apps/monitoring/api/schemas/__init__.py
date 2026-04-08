@@ -19,13 +19,27 @@ from .forecasts import (
     ForecastRunSchema,
 )
 from .models import ModelLeaderboardEntrySchema, ModelVersionSchema, TrainModelPayload
-from .observations import CollectObservationsPayload, ObservationSchema, ObservationSyncSchema
+from .observations import (
+    AirMapBoundsSchema,
+    AirMapMetricSnapshotSchema,
+    AirMapSnapshotSchema,
+    AirMapStationPointSchema,
+    AirMapSummarySchema,
+    CollectObservationsPayload,
+    ObservationSchema,
+    ObservationSyncSchema,
+)
 from .overview import AutomaticCollectionSchema, MonitoringOverviewCountsSchema, MonitoringOverviewSchema
 
 __all__ = (
     "AutomaticCollectionSchema",
     "AsyncTaskLaunchSchema",
     "AsyncTaskStatusSchema",
+    "AirMapBoundsSchema",
+    "AirMapMetricSnapshotSchema",
+    "AirMapSnapshotSchema",
+    "AirMapStationPointSchema",
+    "AirMapSummarySchema",
     "BuildDatasetPayload",
     "CollectObservationsPayload",
     "CreateExperimentSeriesPayload",

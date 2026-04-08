@@ -1,4 +1,4 @@
-from datetime import UTC
+from datetime import UTC, datetime
 
 from ninja import Query, Router
 from ninja.responses import Status
@@ -7,8 +7,10 @@ from apps.authentication.security.jwt import JWTAuth
 from apps.monitoring.services.observations import ObservationSyncService
 
 from ...selectors import list_observations
+from ...selectors.monitoring import get_air_map_snapshot
 from ...services.task_queue import MonitoringTaskQueueService
 from ..schemas import (
+    AirMapSnapshotSchema,
     AsyncTaskLaunchSchema,
     CollectObservationsPayload,
     MessageSchema,
@@ -21,9 +23,22 @@ router = Router(tags=["Мониторинг: наблюдения"])
 
 
 @router.get("/observations", response=list[ObservationSchema])
-def observations(request, metric: str | None = None, source: str | None = None, limit: int = Query(100, ge=1, le=500)):
+def observations(
+    request,
+    metric: str | None = None,
+    source: str | None = None,
+    start: datetime | None = None,
+    finish: datetime | None = None,
+    limit: int = Query(100, ge=1, le=5000),
+):
     """Возвращает последние наблюдения с необязательной фильтрацией."""
-    return list_observations(metric=metric, source=source, limit=limit)
+    return list_observations(metric=metric, source=source, start=start, finish=finish, limit=limit)
+
+
+@router.get("/air-map", response=AirMapSnapshotSchema)
+def air_map_snapshot(request):
+    """Возвращает актуальный spatial snapshot для страницы карты воздуха."""
+    return get_air_map_snapshot()
 
 
 @router.post("/observations/collect", response={200: ObservationSyncSchema, 400: MessageSchema}, auth=JWTAuth())

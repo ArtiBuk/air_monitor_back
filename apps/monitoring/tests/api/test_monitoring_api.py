@@ -78,6 +78,84 @@ def test_monitoring_overview_exposes_real_counts_and_collection_config(
     assert payload["automatic_collection"]["enabled_sources"] == ["mycityair", "plumelabs"]
 
 
+def test_monitoring_overview_report_downloads_pdf(
+    authenticated_client,
+    dataset_snapshot_factory,
+    model_version_factory,
+    forecast_run_factory,
+    forecast_evaluation_factory,
+    experiment_series_factory,
+    experiment_run_factory,
+    reference_observations_factory,
+):
+    reference_observations_factory(hours=48)
+    dataset = dataset_snapshot_factory(
+        sample_count=192,
+        master_row_count=360,
+        feature_columns=["mycityair_aqi_mean", "plume_pm25", "plume_so2"],
+        target_columns=["mycityair_aqi_mean", "plume_pm25"],
+    )
+    model = model_version_factory(
+        dataset=dataset,
+        name="gru-baseline",
+        target_names=["mycityair_aqi_mean", "plume_pm25"],
+        metrics={"summary": {"overall_rmse": 1.3, "overall_mae": 0.84, "macro_mape": 0.18}},
+    )
+    forecast = forecast_run_factory(model_version=model)
+    forecast.records.create(
+        timestamp_utc=datetime(2026, 4, 8, 1, 0, tzinfo=UTC),
+        values={"mycityair_aqi_mean": 74.0, "plume_pm25": 21.0},
+    )
+    forecast.records.create(
+        timestamp_utc=datetime(2026, 4, 8, 2, 0, tzinfo=UTC),
+        values={"mycityair_aqi_mean": 68.0, "plume_pm25": 18.0},
+    )
+    evaluation = forecast_evaluation_factory(
+        forecast_run=forecast,
+        coverage_ratio=0.92,
+        metrics={"summary": {"overall_rmse": 1.1, "overall_mae": 0.7, "macro_mape": 0.15}},
+    )
+    series = experiment_series_factory(
+        summary={"run_count": 1, "completed_run_count": 1, "failed_run_count": 0, "best_backtest_overall_rmse": 1.1}
+    )
+    experiment_run_factory(
+        series=series,
+        dataset_snapshot=dataset,
+        model_version=model,
+        forecast_run=forecast,
+        forecast_evaluation=evaluation,
+        name="research-pass-1",
+    )
+
+    response = authenticated_client.get("/api/monitoring/overview/report.pdf")
+
+    assert response.status_code == 200
+    assert response["Content-Type"] == "application/pdf"
+    assert 'attachment; filename="air-monitor-report.pdf"' == response["Content-Disposition"]
+    assert response.content.startswith(b"%PDF-")
+    assert len(response.content) > 2_000
+
+
+def test_air_map_endpoint_groups_latest_station_points_and_city_metrics(
+    authenticated_client,
+    reference_observations_factory,
+):
+    reference_observations_factory(hours=24, station_count=4)
+
+    response = authenticated_client.get("/api/monitoring/air-map")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["summary"]["station_count"] == 4
+    assert payload["summary"]["city_metric_count"] >= 6
+    assert payload["summary"]["latest_station_timestamp"] is not None
+    assert payload["summary"]["latest_city_timestamp"] is not None
+    assert payload["bounds"]["center_lat"] is not None
+    assert payload["bounds"]["center_lon"] is not None
+    assert len(payload["station_points"]) == 4
+    assert {item["metric"] for item in payload["city_metrics"]} >= {"o3", "no2", "pm10", "pm25", "plume_index"}
+
+
 @patch("apps.monitoring.services.observations.PlumeCollector.collect")
 @patch("apps.monitoring.services.observations.MyCityAirCollector.collect")
 def test_collect_observations_async_exposes_task_status(
