@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 
+from apps.monitoring.sources import CITY_BACKGROUND_SOURCES, SOURCE_OPEN_METEO, SOURCE_PLUMELABS
+
 from .config import BASE_SIGNAL_COLUMNS, COUNT_COLUMNS, INPUT_CSV, RNG
 
 
@@ -23,13 +25,13 @@ def load_observations(path: str) -> pd.DataFrame:
 
 
 def build_plume_wide(df: pd.DataFrame) -> pd.DataFrame:
-    city = df[df["source"].isin(["plumelabs", "open_meteo"])].copy()
+    city = df[df["source"].isin(CITY_BACKGROUND_SOURCES)].copy()
     if city.empty:
         return pd.DataFrame(columns=["timestamp_utc"])
 
     # Keep historical compatibility: when both providers are available for the same hour,
     # prefer plume values and fill gaps from open-meteo.
-    priority = {"plumelabs": 0, "open_meteo": 1}
+    priority = {SOURCE_PLUMELABS: 0, SOURCE_OPEN_METEO: 1}
     city["source_priority"] = city["source"].map(priority).fillna(9)
     city = city.sort_values(["time_window_utc", "metric", "source_priority"])
     selected = city.drop_duplicates(subset=["time_window_utc", "metric"], keep="first")

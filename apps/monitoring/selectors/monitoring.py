@@ -12,6 +12,7 @@ from apps.monitoring.models import (
     ScheduledMonitoringTask,
 )
 from apps.monitoring.services.model_selection import ModelSelectionService
+from apps.monitoring.sources import CITY_BACKGROUND_SOURCES, COLLECTION_ENABLED_SOURCES
 
 
 def list_observations(*, metric=None, source=None, start=None, finish=None, limit=100):
@@ -39,7 +40,7 @@ def get_air_map_snapshot():
         else Observation.objects.none()
     )
 
-    city_queryset = Observation.objects.filter(source__in=["plumelabs", "open_meteo"])
+    city_queryset = Observation.objects.filter(source__in=CITY_BACKGROUND_SOURCES)
     latest_city_timestamp = city_queryset.order_by("-observed_at_utc").values_list("observed_at_utc", flat=True).first()
     city_metrics = (
         city_queryset.filter(observed_at_utc=latest_city_timestamp).order_by("metric")
@@ -63,7 +64,7 @@ def get_air_map_snapshot():
             "latest_city_timestamp": latest_city_timestamp,
             "station_count": station_points.count(),
             "city_metric_count": city_metrics.count(),
-            "sources": ["mycityair", "plumelabs", "open_meteo"],
+            "sources": list(COLLECTION_ENABLED_SOURCES),
         },
         "bounds": {
             "min_lat": bounds["min_lat"],
@@ -244,6 +245,6 @@ def get_monitoring_overview():
             "interval": settings.MONITORING_INTERVAL,
             "window_hours": settings.MONITORING_WINDOW_HOURS,
             "schedule_minute": 5,
-            "enabled_sources": ["mycityair", "plumelabs", "open_meteo"],
+            "enabled_sources": list(COLLECTION_ENABLED_SOURCES),
         },
     }

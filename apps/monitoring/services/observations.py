@@ -9,6 +9,7 @@ from apps.monitoring.ingestion.utils import normalize_and_filter_observations
 from apps.monitoring.models import Observation
 from apps.monitoring.providers import MyCityAirCollector, OpenMeteoCollector, PlumeCollector
 from apps.monitoring.providers.base import BaseCollector
+from apps.monitoring.sources import SOURCE_MYCITYAIR, SOURCE_OPEN_METEO, SOURCE_PLUMELABS
 
 from .utils import build_observation_fingerprint, parse_utc_datetime
 
@@ -46,17 +47,17 @@ class ObservationSyncService:
     ) -> tuple[list[IngestedObservation], list[ObservationSourceReport], list[str]]:
         collectors: list[tuple[str, BaseCollector, dict[str, Any]]] = [
             (
-                "mycityair",
+                SOURCE_MYCITYAIR,
                 MyCityAirCollector(window_hours=window_hours),
                 {"start": start, "finish": finish, "interval": interval},
             ),
             (
-                "open_meteo",
+                SOURCE_OPEN_METEO,
                 OpenMeteoCollector(window_hours=window_hours),
                 {"start": start, "finish": finish},
             ),
             (
-                "plumelabs",
+                SOURCE_PLUMELABS,
                 PlumeCollector(page_url=self.PLUME_PAGE_URL, window_hours=window_hours),
                 {"start": start, "finish": finish, "timeline": True},
             ),

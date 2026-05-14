@@ -5,12 +5,13 @@ import openmeteo_requests
 
 from ..ingestion.types import Observation
 from ..ingestion.utils import floor_timestamp_to_hour, floor_timestamp_to_window, safe_float
+from ..sources import SOURCE_OPEN_METEO
 from .base import BaseCollector
 
 
 class OpenMeteoCollector(BaseCollector):
-    source_name = "open_meteo"
-    provider_name = "open_meteo"
+    source_name = SOURCE_OPEN_METEO
+    provider_name = SOURCE_OPEN_METEO
 
     URL = "https://air-quality-api.open-meteo.com/v1/air-quality"
     DEFAULT_LATITUDE = 69.3558

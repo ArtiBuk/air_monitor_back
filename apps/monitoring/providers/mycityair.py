@@ -3,11 +3,12 @@ from typing import Any
 from ..config import MYCITYAIR_TOKEN
 from ..ingestion.types import Observation
 from ..ingestion.utils import floor_timestamp_to_hour, floor_timestamp_to_window, http_get_json
+from ..sources import SOURCE_MYCITYAIR
 from .base import BaseCollector
 
 
 class MyCityAirCollector(BaseCollector):
-    source_name = "mycityair"
+    source_name = SOURCE_MYCITYAIR
 
     URL = "https://eco-sources.mycityair.ru/api/basic/v1/group/66/timeline/widget"
 
