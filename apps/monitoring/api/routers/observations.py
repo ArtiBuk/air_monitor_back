@@ -61,6 +61,16 @@ def collect_observations(request, payload: CollectObservationsPayload):
             "cleaned_count": result.cleaned_count,
             "db_created_count": result.db_created_count,
             "db_updated_count": result.db_updated_count,
+            "warnings": result.warnings,
+            "source_reports": [
+                {
+                    "source": report.source,
+                    "status": report.status,
+                    "raw_count": report.raw_count,
+                    "error": report.error,
+                }
+                for report in result.source_reports
+            ],
         },
     )
 

@@ -44,19 +44,114 @@ from .formatters import (
 def _build_styles(font_name: str, bold_font_name: str) -> dict[str, ParagraphStyle]:
     base = getSampleStyleSheet()
     return {
-        "eyebrow": ParagraphStyle("AirEyebrow", parent=base["BodyText"], fontName=bold_font_name, fontSize=8.5, leading=11, textColor=PDF_ACCENT),
-        "title": ParagraphStyle("AirTitle", parent=base["Title"], fontName=bold_font_name, fontSize=21, leading=25, textColor=PDF_TEXT, spaceAfter=4, alignment=TA_LEFT),
-        "subtitle": ParagraphStyle("AirSubtitle", parent=base["BodyText"], fontName=font_name, fontSize=9.6, leading=13.4, textColor=PDF_MUTED),
-        "section": ParagraphStyle("AirSection", parent=base["Heading2"], fontName=bold_font_name, fontSize=12.5, leading=16, textColor=PDF_TEXT, spaceAfter=6),
-        "section_badge": ParagraphStyle("AirSectionBadge", parent=base["BodyText"], fontName=bold_font_name, fontSize=8.1, leading=10, textColor=PDF_ACCENT, alignment=TA_CENTER),
-        "body": ParagraphStyle("AirBody", parent=base["BodyText"], fontName=font_name, fontSize=9.5, leading=13, textColor=PDF_TEXT, alignment=TA_LEFT, wordWrap="CJK"),
-        "muted": ParagraphStyle("AirMuted", parent=base["BodyText"], fontName=font_name, fontSize=8.4, leading=11.5, textColor=PDF_MUTED, alignment=TA_LEFT, wordWrap="CJK"),
-        "card_value": ParagraphStyle("AirCardValue", parent=base["BodyText"], fontName=bold_font_name, fontSize=16, leading=19, textColor=PDF_TEXT),
-        "card_label": ParagraphStyle("AirCardLabel", parent=base["BodyText"], fontName=font_name, fontSize=8, leading=10, textColor=PDF_MUTED),
-        "label": ParagraphStyle("AirLabel", parent=base["BodyText"], fontName=bold_font_name, fontSize=9.5, leading=13, textColor=PDF_TEXT, alignment=TA_LEFT, wordWrap="CJK"),
-        "table_head": ParagraphStyle("AirTableHead", parent=base["BodyText"], fontName=bold_font_name, fontSize=8.3, leading=10.5, textColor=PDF_TEXT, alignment=TA_LEFT, wordWrap="CJK"),
-        "table_cell": ParagraphStyle("AirTableCell", parent=base["BodyText"], fontName=font_name, fontSize=8.2, leading=10.4, textColor=PDF_TEXT, alignment=TA_LEFT, wordWrap="CJK"),
-        "callout_title": ParagraphStyle("AirCalloutTitle", parent=base["BodyText"], fontName=bold_font_name, fontSize=10.5, leading=13, textColor=PDF_TEXT),
+        "eyebrow": ParagraphStyle(
+            "AirEyebrow",
+            parent=base["BodyText"],
+            fontName=bold_font_name,
+            fontSize=8.5,
+            leading=11,
+            textColor=PDF_ACCENT,
+        ),
+        "title": ParagraphStyle(
+            "AirTitle",
+            parent=base["Title"],
+            fontName=bold_font_name,
+            fontSize=21,
+            leading=25,
+            textColor=PDF_TEXT,
+            spaceAfter=4,
+            alignment=TA_LEFT,
+        ),
+        "subtitle": ParagraphStyle(
+            "AirSubtitle", parent=base["BodyText"], fontName=font_name, fontSize=9.6, leading=13.4, textColor=PDF_MUTED
+        ),
+        "section": ParagraphStyle(
+            "AirSection",
+            parent=base["Heading2"],
+            fontName=bold_font_name,
+            fontSize=12.5,
+            leading=16,
+            textColor=PDF_TEXT,
+            spaceAfter=6,
+        ),
+        "section_badge": ParagraphStyle(
+            "AirSectionBadge",
+            parent=base["BodyText"],
+            fontName=bold_font_name,
+            fontSize=8.1,
+            leading=10,
+            textColor=PDF_ACCENT,
+            alignment=TA_CENTER,
+        ),
+        "body": ParagraphStyle(
+            "AirBody",
+            parent=base["BodyText"],
+            fontName=font_name,
+            fontSize=9.5,
+            leading=13,
+            textColor=PDF_TEXT,
+            alignment=TA_LEFT,
+            wordWrap="CJK",
+        ),
+        "muted": ParagraphStyle(
+            "AirMuted",
+            parent=base["BodyText"],
+            fontName=font_name,
+            fontSize=8.4,
+            leading=11.5,
+            textColor=PDF_MUTED,
+            alignment=TA_LEFT,
+            wordWrap="CJK",
+        ),
+        "card_value": ParagraphStyle(
+            "AirCardValue",
+            parent=base["BodyText"],
+            fontName=bold_font_name,
+            fontSize=16,
+            leading=19,
+            textColor=PDF_TEXT,
+        ),
+        "card_label": ParagraphStyle(
+            "AirCardLabel", parent=base["BodyText"], fontName=font_name, fontSize=8, leading=10, textColor=PDF_MUTED
+        ),
+        "label": ParagraphStyle(
+            "AirLabel",
+            parent=base["BodyText"],
+            fontName=bold_font_name,
+            fontSize=9.5,
+            leading=13,
+            textColor=PDF_TEXT,
+            alignment=TA_LEFT,
+            wordWrap="CJK",
+        ),
+        "table_head": ParagraphStyle(
+            "AirTableHead",
+            parent=base["BodyText"],
+            fontName=bold_font_name,
+            fontSize=8.3,
+            leading=10.5,
+            textColor=PDF_TEXT,
+            alignment=TA_LEFT,
+            wordWrap="CJK",
+        ),
+        "table_cell": ParagraphStyle(
+            "AirTableCell",
+            parent=base["BodyText"],
+            fontName=font_name,
+            fontSize=8.2,
+            leading=10.4,
+            textColor=PDF_TEXT,
+            alignment=TA_LEFT,
+            wordWrap="CJK",
+        ),
+        "callout_title": ParagraphStyle(
+            "AirCalloutTitle",
+            parent=base["BodyText"],
+            fontName=bold_font_name,
+            fontSize=10.5,
+            leading=13,
+            textColor=PDF_TEXT,
+        ),
     }
 
 
@@ -137,12 +232,49 @@ def _research_flow(font_name: str) -> Drawing:
     y = 10 * mm
     for index, (label, color) in enumerate(steps):
         drawing.add(Rect(x, y, box_w, box_h, rx=4, ry=4, fillColor=color, strokeColor=PDF_BORDER))
-        drawing.add(String(x + box_w / 2, y + 4.2 * mm, label, fontName=font_name, fontSize=7.2, textAnchor="middle", fillColor=PDF_DEEP))
+        drawing.add(
+            String(
+                x + box_w / 2,
+                y + 4.2 * mm,
+                label,
+                fontName=font_name,
+                fontSize=7.2,
+                textAnchor="middle",
+                fillColor=PDF_DEEP,
+            )
+        )
         if index < len(steps) - 1:
             arrow_x = x + box_w
-            drawing.add(Line(arrow_x + 1.5 * mm, y + box_h / 2, arrow_x + gap - 1.5 * mm, y + box_h / 2, strokeColor=PDF_ACCENT, strokeWidth=1.4))
-            drawing.add(Line(arrow_x + gap - 4, y + box_h / 2 + 2, arrow_x + gap - 1.5, y + box_h / 2, strokeColor=PDF_ACCENT, strokeWidth=1.4))
-            drawing.add(Line(arrow_x + gap - 4, y + box_h / 2 - 2, arrow_x + gap - 1.5, y + box_h / 2, strokeColor=PDF_ACCENT, strokeWidth=1.4))
+            drawing.add(
+                Line(
+                    arrow_x + 1.5 * mm,
+                    y + box_h / 2,
+                    arrow_x + gap - 1.5 * mm,
+                    y + box_h / 2,
+                    strokeColor=PDF_ACCENT,
+                    strokeWidth=1.4,
+                )
+            )
+            drawing.add(
+                Line(
+                    arrow_x + gap - 4,
+                    y + box_h / 2 + 2,
+                    arrow_x + gap - 1.5,
+                    y + box_h / 2,
+                    strokeColor=PDF_ACCENT,
+                    strokeWidth=1.4,
+                )
+            )
+            drawing.add(
+                Line(
+                    arrow_x + gap - 4,
+                    y + box_h / 2 - 2,
+                    arrow_x + gap - 1.5,
+                    y + box_h / 2,
+                    strokeColor=PDF_ACCENT,
+                    strokeWidth=1.4,
+                )
+            )
         x += box_w + gap
     return drawing
 
@@ -214,9 +346,22 @@ def _summary_cards(report: dict, styles: dict[str, ParagraphStyle]) -> Table:
     for index, (label, value, helper) in enumerate(cards, start=1):
         row.append(
             Table(
-                [[Paragraph(label, styles["card_label"])], [Paragraph(value, styles["card_value"])], [Paragraph(helper, styles["muted"])]],
+                [
+                    [Paragraph(label, styles["card_label"])],
+                    [Paragraph(value, styles["card_value"])],
+                    [Paragraph(helper, styles["muted"])],
+                ],
                 colWidths=[card_width],
-                style=TableStyle([("BACKGROUND", (0, 0), (-1, -1), PDF_PANEL), ("BOX", (0, 0), (-1, -1), 0.7, PDF_BORDER), ("LEFTPADDING", (0, 0), (-1, -1), 8), ("RIGHTPADDING", (0, 0), (-1, -1), 8), ("TOPPADDING", (0, 0), (-1, -1), 8), ("BOTTOMPADDING", (0, 0), (-1, -1), 8)]),
+                style=TableStyle(
+                    [
+                        ("BACKGROUND", (0, 0), (-1, -1), PDF_PANEL),
+                        ("BOX", (0, 0), (-1, -1), 0.7, PDF_BORDER),
+                        ("LEFTPADDING", (0, 0), (-1, -1), 8),
+                        ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+                        ("TOPPADDING", (0, 0), (-1, -1), 8),
+                        ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+                    ]
+                ),
             )
         )
         if index % 3 == 0:
@@ -228,16 +373,31 @@ def _summary_cards(report: dict, styles: dict[str, ParagraphStyle]) -> Table:
         rows,
         colWidths=[INNER_CONTENT_WIDTH / 3, INNER_CONTENT_WIDTH / 3, INNER_CONTENT_WIDTH / 3],
         hAlign="LEFT",
-        style=TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0), ("RIGHTPADDING", (0, 0), (-1, -1), 0)]),
+        style=TableStyle(
+            [
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+            ]
+        ),
     )
     return Table(
         [[grid]],
         colWidths=[CONTENT_WIDTH],
-        style=TableStyle([("LEFTPADDING", (0, 0), (-1, -1), CONTENT_INSET), ("RIGHTPADDING", (0, 0), (-1, -1), CONTENT_INSET), ("TOPPADDING", (0, 0), (-1, -1), 0), ("BOTTOMPADDING", (0, 0), (-1, -1), 0)]),
+        style=TableStyle(
+            [
+                ("LEFTPADDING", (0, 0), (-1, -1), CONTENT_INSET),
+                ("RIGHTPADDING", (0, 0), (-1, -1), CONTENT_INSET),
+                ("TOPPADDING", (0, 0), (-1, -1), 0),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+            ]
+        ),
     )
 
 
-def _simple_detail_table(rows: list[tuple[str, str]], styles: dict[str, ParagraphStyle], col_widths=(46 * mm, INNER_CONTENT_WIDTH - 46 * mm)) -> Table:
+def _simple_detail_table(
+    rows: list[tuple[str, str]], styles: dict[str, ParagraphStyle], col_widths=(46 * mm, INNER_CONTENT_WIDTH - 46 * mm)
+) -> Table:
     table_rows = [[Paragraph(label, styles["label"]), Paragraph(value, styles["body"])] for label, value in rows]
     table = Table(
         table_rows,
@@ -288,8 +448,28 @@ def _source_chart(report: dict, font_name: str) -> Drawing:
         bar_height = chart_h * (source["observation_count"] / max_value)
         x = chart_x + idx * (bar_w + bar_gap) + 4
         drawing.add(Rect(x, chart_y, bar_w, bar_height, fillColor=PDF_ACCENT, strokeColor=PDF_ACCENT))
-        drawing.add(String(x + bar_w / 2, chart_y + bar_height + 4, format_int(source["observation_count"]), fontName=font_name, fontSize=7.5, textAnchor="middle", fillColor=PDF_TEXT))
-        drawing.add(String(x + bar_w / 2, chart_y - 8, source["label"], fontName=font_name, fontSize=7, textAnchor="middle", fillColor=PDF_MUTED))
+        drawing.add(
+            String(
+                x + bar_w / 2,
+                chart_y + bar_height + 4,
+                format_int(source["observation_count"]),
+                fontName=font_name,
+                fontSize=7.5,
+                textAnchor="middle",
+                fillColor=PDF_TEXT,
+            )
+        )
+        drawing.add(
+            String(
+                x + bar_w / 2,
+                chart_y - 8,
+                source["label"],
+                fontName=font_name,
+                fontSize=7,
+                textAnchor="middle",
+                fillColor=PDF_MUTED,
+            )
+        )
     return drawing
 
 
@@ -297,7 +477,11 @@ def _aqi_forecast_chart(report: dict, font_name: str) -> Drawing:
     drawing = Drawing(INNER_CONTENT_WIDTH, 48 * mm)
     series = (report.get("latest_forecast") or {}).get("aqi_series") or []
     if len(series) < 2:
-        drawing.add(String(0, 10, "Для прогноза AQI пока недостаточно точек.", fontName=font_name, fontSize=9, fillColor=PDF_MUTED))
+        drawing.add(
+            String(
+                0, 10, "Для прогноза AQI пока недостаточно точек.", fontName=font_name, fontSize=9, fillColor=PDF_MUTED
+            )
+        )
         return drawing
     chart_x = 0
     chart_y = 10
@@ -322,21 +506,70 @@ def _aqi_forecast_chart(report: dict, font_name: str) -> Drawing:
         drawing.add(Circle(x, y, 1.8, fillColor=PDF_WARM, strokeColor=PDF_WARM))
         if idx % step == 0 or idx == len(points) - 1:
             label = series[idx]["label"][11:16] if len(series[idx]["label"]) >= 16 else series[idx]["label"]
-            drawing.add(String(x, chart_y - 8, label, fontName=font_name, fontSize=6.8, textAnchor="middle", fillColor=PDF_MUTED))
-    drawing.add(String(chart_x + chart_w + 6, chart_y + chart_h - 2, format_number(max_value), fontName=font_name, fontSize=7, fillColor=PDF_MUTED))
-    drawing.add(String(chart_x + chart_w + 6, chart_y - 2, format_number(min_value), fontName=font_name, fontSize=7, fillColor=PDF_MUTED))
+            drawing.add(
+                String(
+                    x, chart_y - 8, label, fontName=font_name, fontSize=6.8, textAnchor="middle", fillColor=PDF_MUTED
+                )
+            )
+    drawing.add(
+        String(
+            chart_x + chart_w + 6,
+            chart_y + chart_h - 2,
+            format_number(max_value),
+            fontName=font_name,
+            fontSize=7,
+            fillColor=PDF_MUTED,
+        )
+    )
+    drawing.add(
+        String(
+            chart_x + chart_w + 6,
+            chart_y - 2,
+            format_number(min_value),
+            fontName=font_name,
+            fontSize=7,
+            fillColor=PDF_MUTED,
+        )
+    )
     return drawing
 
 
 def _build_source_observation_table(report: dict, styles: dict[str, ParagraphStyle]) -> Table:
-    rows = [[Paragraph("Источник", styles["table_head"]), Paragraph("Наблюдения", styles["table_head"]), Paragraph("Станции", styles["table_head"]), Paragraph("Метрики", styles["table_head"]), Paragraph("Последняя точка", styles["table_head"])]]
+    rows = [
+        [
+            Paragraph("Источник", styles["table_head"]),
+            Paragraph("Наблюдения", styles["table_head"]),
+            Paragraph("Станции", styles["table_head"]),
+            Paragraph("Метрики", styles["table_head"]),
+            Paragraph("Последняя точка", styles["table_head"]),
+        ]
+    ]
     for source in report["observations"]["sources"]:
-        rows.append([Paragraph(source["label"], styles["table_cell"]), Paragraph(format_int(source["observation_count"]), styles["table_cell"]), Paragraph(format_int(source["station_count"]), styles["table_cell"]), Paragraph(format_metric_list(source["metrics"], limit=3), styles["table_cell"]), Paragraph(format_datetime(source["latest_timestamp"]), styles["table_cell"])])
+        rows.append(
+            [
+                Paragraph(source["label"], styles["table_cell"]),
+                Paragraph(format_int(source["observation_count"]), styles["table_cell"]),
+                Paragraph(format_int(source["station_count"]), styles["table_cell"]),
+                Paragraph(format_metric_list(source["metrics"], limit=3), styles["table_cell"]),
+                Paragraph(format_datetime(source["latest_timestamp"]), styles["table_cell"]),
+            ]
+        )
     table = Table(
         rows,
         colWidths=[28 * mm, 20 * mm, 16 * mm, 62 * mm, INNER_CONTENT_WIDTH - 126 * mm],
         hAlign="LEFT",
-        style=TableStyle([("BACKGROUND", (0, 0), (-1, 0), PDF_ACCENT_SOFT), ("BOX", (0, 0), (-1, -1), 0.7, PDF_BORDER), ("INNERGRID", (0, 0), (-1, -1), 0.5, PDF_BORDER), ("LEFTPADDING", (0, 0), (-1, -1), 6), ("RIGHTPADDING", (0, 0), (-1, -1), 6), ("TOPPADDING", (0, 0), (-1, -1), 5), ("BOTTOMPADDING", (0, 0), (-1, -1), 5), ("VALIGN", (0, 0), (-1, -1), "TOP")]),
+        style=TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), PDF_ACCENT_SOFT),
+                ("BOX", (0, 0), (-1, -1), 0.7, PDF_BORDER),
+                ("INNERGRID", (0, 0), (-1, -1), 0.5, PDF_BORDER),
+                ("LEFTPADDING", (0, 0), (-1, -1), 6),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+                ("TOPPADDING", (0, 0), (-1, -1), 5),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ]
+        ),
     )
     return Table(
         [[table]],
@@ -356,7 +589,16 @@ def render_monitoring_executive_report_pdf(report: dict) -> bytes:
     font_name, bold_font_name = register_report_font()
     styles = _build_styles(font_name, bold_font_name)
     buffer = BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4, leftMargin=16 * mm, rightMargin=16 * mm, topMargin=16 * mm, bottomMargin=14 * mm, title=report["title"], author="Air Monitor Back")
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        leftMargin=16 * mm,
+        rightMargin=16 * mm,
+        topMargin=16 * mm,
+        bottomMargin=14 * mm,
+        title=report["title"],
+        author="Air Monitor Back",
+    )
     story = [
         _logo_flowable(bold_font_name),
         Spacer(1, 8),
@@ -391,13 +633,19 @@ def render_monitoring_executive_report_pdf(report: dict) -> bytes:
         Spacer(1, 6),
         _section_header(2, "Источники наблюдений", styles),
         Spacer(1, 4),
-        Paragraph("Ниже показано, какой вклад в систему вносит каждый источник данных. Чем больше наблюдений и станций, тем устойчивее последующие датасеты и прогнозы.", styles["body"]),
+        Paragraph(
+            "Ниже показано, какой вклад в систему вносит каждый источник данных. Чем больше наблюдений и станций, тем устойчивее последующие датасеты и прогнозы.",
+            styles["body"],
+        ),
         Spacer(1, 4),
         _inset_flowable(_source_chart(report, font_name)),
         Spacer(1, 6),
         _simple_detail_table(
             [
-                ("Период данных", f"{report['observations']['first_label']} — {report['observations']['latest_label']}"),
+                (
+                    "Период данных",
+                    f"{report['observations']['first_label']} — {report['observations']['latest_label']}",
+                ),
                 ("Количество станций", format_int(report["observations"]["station_count"])),
                 ("Источники", ", ".join(item["label"] for item in report["observations"]["sources"]) or "—"),
             ],
@@ -412,112 +660,144 @@ def render_monitoring_executive_report_pdf(report: dict) -> bytes:
 
     dataset = report["latest_dataset"]
     if dataset:
-        story.extend([
-            Paragraph("Последняя обучающая выборка собрана из реальных наблюдений и временных признаков. Она нужна для того, чтобы модель улавливала суточные и краткосрочные колебания загрязнения.", styles["body"]),
-            Spacer(1, 4),
-            _simple_detail_table(
-                [
-                    ("Когда собран датасет", format_datetime(dataset["created_at"])),
-                    ("Размер обучающей выборки", f"{format_int(dataset['sample_count'])} временных фрагментов"),
-                    ("Общий объём исходных строк", format_int(dataset["master_row_count"])),
-                    ("Окно входных данных", f"{dataset['input_len_hours']} часов истории на один прогноз"),
-                    ("Горизонт прогноза", f"{dataset['forecast_horizon_hours']} часов вперёд"),
-                    ("Основные прогнозируемые показатели", dataset["target_preview_label"]),
-                ],
-                styles,
-            ),
-            Spacer(1, 5),
-            _insight_panel(
-                "Почему это важно",
-                "Качество датасета напрямую определяет качество прогноза: именно здесь фиксируются горизонт прогнозирования, "
-                "набор целевых показателей и полнота временного ряда, на котором дальше обучается модель.",
-                styles,
-                background=PDF_SUCCESS,
-            ),
-        ])
+        story.extend(
+            [
+                Paragraph(
+                    "Последняя обучающая выборка собрана из реальных наблюдений и временных признаков. Она нужна для того, чтобы модель улавливала суточные и краткосрочные колебания загрязнения.",
+                    styles["body"],
+                ),
+                Spacer(1, 4),
+                _simple_detail_table(
+                    [
+                        ("Когда собран датасет", format_datetime(dataset["created_at"])),
+                        ("Размер обучающей выборки", f"{format_int(dataset['sample_count'])} временных фрагментов"),
+                        ("Общий объём исходных строк", format_int(dataset["master_row_count"])),
+                        ("Окно входных данных", f"{dataset['input_len_hours']} часов истории на один прогноз"),
+                        ("Горизонт прогноза", f"{dataset['forecast_horizon_hours']} часов вперёд"),
+                        ("Основные прогнозируемые показатели", dataset["target_preview_label"]),
+                    ],
+                    styles,
+                ),
+                Spacer(1, 5),
+                _insight_panel(
+                    "Почему это важно",
+                    "Качество датасета напрямую определяет качество прогноза: именно здесь фиксируются горизонт прогнозирования, "
+                    "набор целевых показателей и полнота временного ряда, на котором дальше обучается модель.",
+                    styles,
+                    background=PDF_SUCCESS,
+                ),
+            ]
+        )
     else:
         story.append(Paragraph("Датасеты ещё не собраны.", styles["body"]))
 
     active_model = report["active_model"]
     story.append(Spacer(1, 6))
     if active_model:
-        story.extend([
-            Paragraph("Ниже указана текущая рабочая модель. Именно её backend использует для формирования последних прогнозов по городу.", styles["body"]),
-            Spacer(1, 4),
-            _simple_detail_table(
-                [
-                    ("Название модели", active_model["name"]),
-                    ("На чём обучалась", f"выборка на {format_int(active_model['dataset_sample_count'])} фрагментов"),
-                    ("Какие показатели прогнозирует", active_model["target_preview_label"]),
-                    ("Основная ошибка модели", f"RMSE {active_model['avg_overall_rmse_label']}"),
-                    ("Средняя абсолютная ошибка", f"MAE {active_model['avg_overall_mae_label']}"),
-                    ("Средняя относительная ошибка", f"MAPE {active_model['avg_macro_mape_label']}%"),
-                    ("Откуда взята оценка качества", active_model["metric_source_label"]),
-                ],
-                styles,
-            ),
-            Spacer(1, 4),
-            Paragraph("Пояснение к метрикам: RMSE показывает типичный масштаб ошибки с усилением крупных промахов; MAE показывает среднюю абсолютную ошибку; MAPE отражает среднюю относительную ошибку в процентах.", styles["muted"]),
-        ])
+        story.extend(
+            [
+                Paragraph(
+                    "Ниже указана текущая рабочая модель. Именно её backend использует для формирования последних прогнозов по городу.",
+                    styles["body"],
+                ),
+                Spacer(1, 4),
+                _simple_detail_table(
+                    [
+                        ("Название модели", active_model["name"]),
+                        (
+                            "На чём обучалась",
+                            f"выборка на {format_int(active_model['dataset_sample_count'])} фрагментов",
+                        ),
+                        ("Какие показатели прогнозирует", active_model["target_preview_label"]),
+                        ("Основная ошибка модели", f"RMSE {active_model['avg_overall_rmse_label']}"),
+                        ("Средняя абсолютная ошибка", f"MAE {active_model['avg_overall_mae_label']}"),
+                        ("Средняя относительная ошибка", f"MAPE {active_model['avg_macro_mape_label']}%"),
+                        ("Откуда взята оценка качества", active_model["metric_source_label"]),
+                    ],
+                    styles,
+                ),
+                Spacer(1, 4),
+                Paragraph(
+                    "Пояснение к метрикам: RMSE показывает типичный масштаб ошибки с усилением крупных промахов; MAE показывает среднюю абсолютную ошибку; MAPE отражает среднюю относительную ошибку в процентах.",
+                    styles["muted"],
+                ),
+            ]
+        )
     else:
         story.append(Paragraph("Готовая активная модель пока отсутствует.", styles["body"]))
 
     story.extend([Spacer(1, 10), _section_header(4, "Последний прогноз по городу", styles), Spacer(1, 4)])
     latest_forecast = report["latest_forecast"]
     if latest_forecast:
-        story.extend([
-            Paragraph("График ниже показывает, как меняется прогнозный индекс качества воздуха AQI на горизонте последнего запуска модели.", styles["body"]),
-            Spacer(1, 4),
-            _inset_flowable(_aqi_forecast_chart(report, font_name)),
-            Spacer(1, 6),
-            _simple_detail_table(
-                [
-                    ("Когда построен прогноз", format_datetime(latest_forecast["created_at"])),
-                    ("На сколько часов вперёд", f"{latest_forecast['forecast_horizon_hours']} часов"),
-                    ("Использованная модель", latest_forecast["model_name"] or "—"),
-                    ("Изменение прогнозного AQI", f"{latest_forecast['aqi_start_label']} → {latest_forecast['aqi_end_label']} (изменение {latest_forecast['aqi_delta_label']})"),
-                    ("Количество временных точек", format_int(latest_forecast["record_count"])),
-                    ("Какие показатели считает прогноз", latest_forecast["target_metrics_label"]),
-                ],
-                styles,
-            ),
-            Spacer(1, 5),
-            _insight_panel(
-                "Связь с картой воздуха",
-                "Именно этот расчётный слой затем попадает в пользовательский интерфейс: карта получает городской прогнозный фон, "
-                "а пользователь видит итог исследования в форме понятного пространственного сценария.",
-                styles,
-                background=PDF_SKY,
-            ),
-            Spacer(1, 5),
-            _insight_panel(
-                "Интерпретация прогноза",
-                report["forecast_interpretation"],
-                styles,
-                background=PDF_PANEL,
-            ),
-        ])
+        story.extend(
+            [
+                Paragraph(
+                    "График ниже показывает, как меняется прогнозный индекс качества воздуха AQI на горизонте последнего запуска модели.",
+                    styles["body"],
+                ),
+                Spacer(1, 4),
+                _inset_flowable(_aqi_forecast_chart(report, font_name)),
+                Spacer(1, 6),
+                _simple_detail_table(
+                    [
+                        ("Когда построен прогноз", format_datetime(latest_forecast["created_at"])),
+                        ("На сколько часов вперёд", f"{latest_forecast['forecast_horizon_hours']} часов"),
+                        ("Использованная модель", latest_forecast["model_name"] or "—"),
+                        (
+                            "Изменение прогнозного AQI",
+                            f"{latest_forecast['aqi_start_label']} → {latest_forecast['aqi_end_label']} (изменение {latest_forecast['aqi_delta_label']})",
+                        ),
+                        ("Количество временных точек", format_int(latest_forecast["record_count"])),
+                        ("Какие показатели считает прогноз", latest_forecast["target_metrics_label"]),
+                    ],
+                    styles,
+                ),
+                Spacer(1, 5),
+                _insight_panel(
+                    "Связь с картой воздуха",
+                    "Именно этот расчётный слой затем попадает в пользовательский интерфейс: карта получает городской прогнозный фон, "
+                    "а пользователь видит итог исследования в форме понятного пространственного сценария.",
+                    styles,
+                    background=PDF_SKY,
+                ),
+                Spacer(1, 5),
+                _insight_panel(
+                    "Интерпретация прогноза",
+                    report["forecast_interpretation"],
+                    styles,
+                    background=PDF_PANEL,
+                ),
+            ]
+        )
     else:
         story.append(Paragraph("Успешный прогноз пока отсутствует.", styles["body"]))
 
     latest_evaluation = report["latest_evaluation"]
     story.extend([Spacer(1, 10), _section_header(5, "Насколько прогнозу можно доверять", styles), Spacer(1, 4)])
     if latest_evaluation:
-        story.extend([
-            Paragraph("После того как появляются фактические наблюдения, система сравнивает их с прогнозом. Это позволяет оценить точность модели на реальных данных, а не только на этапе обучения.", styles["body"]),
-            Spacer(1, 4),
-            _simple_detail_table(
-                [
-                    ("Статус проверки", format_status(latest_evaluation["status"])),
-                    ("Ошибка с усилением крупных отклонений", f"RMSE {latest_evaluation['overall_rmse_label']}"),
-                    ("Средняя абсолютная ошибка", f"MAE {latest_evaluation['overall_mae_label']}"),
-                    ("Средняя относительная ошибка", f"MAPE {latest_evaluation['macro_mape_label']}%"),
-                    ("Покрытие проверкой", f"{latest_evaluation['coverage_ratio_label']}% ({latest_evaluation['matched_record_count']}/{latest_evaluation['expected_record_count']})"),
-                    ("Когда выполнена проверка", format_datetime(latest_evaluation["evaluated_at_utc"])),
-                ],
-                styles,
-            ),
-        ])
+        story.extend(
+            [
+                Paragraph(
+                    "После того как появляются фактические наблюдения, система сравнивает их с прогнозом. Это позволяет оценить точность модели на реальных данных, а не только на этапе обучения.",
+                    styles["body"],
+                ),
+                Spacer(1, 4),
+                _simple_detail_table(
+                    [
+                        ("Статус проверки", format_status(latest_evaluation["status"])),
+                        ("Ошибка с усилением крупных отклонений", f"RMSE {latest_evaluation['overall_rmse_label']}"),
+                        ("Средняя абсолютная ошибка", f"MAE {latest_evaluation['overall_mae_label']}"),
+                        ("Средняя относительная ошибка", f"MAPE {latest_evaluation['macro_mape_label']}%"),
+                        (
+                            "Покрытие проверкой",
+                            f"{latest_evaluation['coverage_ratio_label']}% ({latest_evaluation['matched_record_count']}/{latest_evaluation['expected_record_count']})",
+                        ),
+                        ("Когда выполнена проверка", format_datetime(latest_evaluation["evaluated_at_utc"])),
+                    ],
+                    styles,
+                ),
+            ]
+        )
     else:
         story.append(Paragraph("Оценка прогнозов ещё не проводилась.", styles["body"]))
 
@@ -526,51 +806,71 @@ def render_monitoring_executive_report_pdf(report: dict) -> bytes:
     latest_run = report["latest_experiment_run"]
     experiment_rows = []
     if best_series:
-        experiment_rows.extend([
-            ("Основная серия экспериментов", best_series["name"]),
-            ("Количество запусков в серии", format_int(best_series["run_count"])),
-            ("Лучшая ошибка на исторической проверке", best_series["best_backtest_overall_rmse_label"]),
-        ])
+        experiment_rows.extend(
+            [
+                ("Основная серия экспериментов", best_series["name"]),
+                ("Количество запусков в серии", format_int(best_series["run_count"])),
+                ("Лучшая ошибка на исторической проверке", best_series["best_backtest_overall_rmse_label"]),
+            ]
+        )
     if latest_run:
-        experiment_rows.extend([
-            ("Последний эксперимент", latest_run["name"]),
-            ("Текущий статус эксперимента", latest_run["status_label"]),
-            ("Связанная модель", latest_run["model_name"] or "—"),
-        ])
+        experiment_rows.extend(
+            [
+                ("Последний эксперимент", latest_run["name"]),
+                ("Текущий статус эксперимента", latest_run["status_label"]),
+                ("Связанная модель", latest_run["model_name"] or "—"),
+            ]
+        )
     if experiment_rows:
-        story.extend([
-            Paragraph("Этот блок показывает, что исследование не ограничивается одной моделью: система сохраняет серии экспериментов и позволяет сравнивать разные запуски между собой.", styles["body"]),
-            Spacer(1, 4),
-            _simple_detail_table(experiment_rows, styles),
-            Spacer(1, 5),
-            _insight_panel(
-                "Исследовательский смысл",
-                "Сохранение серий и отдельных запусков важно для магистерской работы: оно позволяет не просто показать один удачный результат, "
-                "а продемонстрировать воспроизводимый процесс поиска рабочей конфигурации модели.",
-                styles,
-                background=PDF_SKY,
-            ),
-        ])
+        story.extend(
+            [
+                Paragraph(
+                    "Этот блок показывает, что исследование не ограничивается одной моделью: система сохраняет серии экспериментов и позволяет сравнивать разные запуски между собой.",
+                    styles["body"],
+                ),
+                Spacer(1, 4),
+                _simple_detail_table(experiment_rows, styles),
+                Spacer(1, 5),
+                _insight_panel(
+                    "Исследовательский смысл",
+                    "Сохранение серий и отдельных запусков важно для магистерской работы: оно позволяет не просто показать один удачный результат, "
+                    "а продемонстрировать воспроизводимый процесс поиска рабочей конфигурации модели.",
+                    styles,
+                    background=PDF_SKY,
+                ),
+            ]
+        )
     else:
         story.append(Paragraph("Экспериментальные серии и запуски пока не накоплены.", styles["body"]))
 
-    story.extend([
-        Spacer(1, 10),
-        _section_header(7, "Итоговые выводы", styles),
-        Spacer(1, 4),
-        _insight_panel(
-            "Главный результат работы",
-            "Система уже замыкает полный прикладной контур: реальные наблюдения превращаются в очищенные временные ряды, "
-            "на их основе обучается модель, затем строится прогноз, проводится проверка качества и итог отображается на карте "
-            "и в этом аналитическом отчёте.",
-            styles,
-            background=PDF_PANEL,
-        ),
-        Spacer(1, 6),
-        ListFlowable([ListItem(Paragraph(item, styles["body"])) for item in report["conclusions"]], bulletType="bullet", leftPadding=12, bulletFontName=font_name, bulletColor=PDF_ACCENT),
-        Spacer(1, 8),
-        Paragraph("Отчёт сформирован автоматически backend-сервисом проекта Air Monitor и оформлен как краткая финальная сводка по исследовательскому контуру, а не как технический дамп внутренних данных.", styles["muted"]),
-    ])
+    story.extend(
+        [
+            Spacer(1, 10),
+            _section_header(7, "Итоговые выводы", styles),
+            Spacer(1, 4),
+            _insight_panel(
+                "Главный результат работы",
+                "Система уже замыкает полный прикладной контур: реальные наблюдения превращаются в очищенные временные ряды, "
+                "на их основе обучается модель, затем строится прогноз, проводится проверка качества и итог отображается на карте "
+                "и в этом аналитическом отчёте.",
+                styles,
+                background=PDF_PANEL,
+            ),
+            Spacer(1, 6),
+            ListFlowable(
+                [ListItem(Paragraph(item, styles["body"])) for item in report["conclusions"]],
+                bulletType="bullet",
+                leftPadding=12,
+                bulletFontName=font_name,
+                bulletColor=PDF_ACCENT,
+            ),
+            Spacer(1, 8),
+            Paragraph(
+                "Отчёт сформирован автоматически backend-сервисом проекта Air Monitor и оформлен как краткая финальная сводка по исследовательскому контуру, а не как технический дамп внутренних данных.",
+                styles["muted"],
+            ),
+        ]
+    )
 
     def draw_page(canvas, document):
         canvas.saveState()

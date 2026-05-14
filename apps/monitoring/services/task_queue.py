@@ -137,7 +137,7 @@ class MonitoringTaskQueueService:
     ) -> MonitoringTaskLaunchResult:
         if scheduled_for is not None:
             return self._schedule_task(
-                operation=ScheduledMonitoringTask.Operation.COLLECT_OBSERVATIONS,
+                operation=str(ScheduledMonitoringTask.Operation.COLLECT_OBSERVATIONS),
                 payload={
                     "start": start,
                     "finish": finish,
@@ -169,7 +169,7 @@ class MonitoringTaskQueueService:
     ) -> MonitoringTaskLaunchResult:
         if scheduled_for is not None:
             return self._schedule_task(
-                operation=ScheduledMonitoringTask.Operation.BUILD_DATASET,
+                operation=str(ScheduledMonitoringTask.Operation.BUILD_DATASET),
                 payload={
                     "input_len_hours": input_len_hours,
                     "forecast_horizon_hours": forecast_horizon_hours,
@@ -202,7 +202,7 @@ class MonitoringTaskQueueService:
     ) -> MonitoringTaskLaunchResult:
         if scheduled_for is not None:
             return self._schedule_task(
-                operation=ScheduledMonitoringTask.Operation.TRAIN_MODEL,
+                operation=str(ScheduledMonitoringTask.Operation.TRAIN_MODEL),
                 payload={
                     "dataset_snapshot_id": dataset_snapshot_id,
                     "requested_by_id": requested_by_id,
@@ -240,7 +240,7 @@ class MonitoringTaskQueueService:
     ) -> MonitoringTaskLaunchResult:
         if scheduled_for is not None:
             return self._schedule_task(
-                operation=ScheduledMonitoringTask.Operation.GENERATE_FORECAST,
+                operation=str(ScheduledMonitoringTask.Operation.GENERATE_FORECAST),
                 payload={
                     "model_version_id": model_version_id,
                     "requested_by_id": requested_by_id,
@@ -276,7 +276,7 @@ class MonitoringTaskQueueService:
     ) -> MonitoringTaskLaunchResult:
         if scheduled_for is not None:
             return self._schedule_task(
-                operation=ScheduledMonitoringTask.Operation.RUN_EXPERIMENT,
+                operation=str(ScheduledMonitoringTask.Operation.RUN_EXPERIMENT),
                 payload={
                     "requested_by_id": requested_by_id,
                     "series_id": series_id,

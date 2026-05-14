@@ -50,11 +50,7 @@ def _collect_source_summary() -> list[dict]:
         .order_by("source")
     )
     metrics_by_source: dict[str, list[str]] = defaultdict(list)
-    for row in (
-        Observation.objects.values("source", "metric")
-        .distinct()
-        .order_by("source", "metric")
-    ):
+    for row in Observation.objects.values("source", "metric").distinct().order_by("source", "metric"):
         source = row["source"] or ""
         metric = row["metric"]
         if metric:
@@ -312,7 +308,9 @@ def _build_forecast_interpretation(report: dict) -> str:
     start_value = latest_forecast["aqi_start"]
     end_value = latest_forecast["aqi_end"]
     if start_value is None or end_value is None:
-        trend_text = "Динамика AQI пока не читается однозначно, так как данных для начала и конца горизонта недостаточно."
+        trend_text = (
+            "Динамика AQI пока не читается однозначно, так как данных для начала и конца горизонта недостаточно."
+        )
     elif end_value > start_value:
         trend_text = (
             f"По последнему прогнозу AQI растёт с {latest_forecast['aqi_start_label']} до {latest_forecast['aqi_end_label']}, "
@@ -427,7 +425,9 @@ def build_monitoring_executive_report() -> dict:
 
     latest_evaluation = _extract_evaluation_summary(latest_evaluation_obj)
     if latest_evaluation:
-        latest_evaluation["coverage_ratio_label"] = format_number((latest_evaluation["coverage_ratio"] or 0) * 100, digits=1)
+        latest_evaluation["coverage_ratio_label"] = format_number(
+            (latest_evaluation["coverage_ratio"] or 0) * 100, digits=1
+        )
         latest_evaluation["overall_rmse_label"] = format_number(latest_evaluation["overall_rmse"])
         latest_evaluation["overall_mae_label"] = format_number(latest_evaluation["overall_mae"])
         latest_evaluation["macro_mape_label"] = format_number((latest_evaluation["macro_mape"] or 0) * 100, digits=1)

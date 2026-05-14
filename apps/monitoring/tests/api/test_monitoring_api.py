@@ -12,11 +12,13 @@ from apps.monitoring.services.forecasts import ForecastGenerationResult
 pytestmark = pytest.mark.django_db
 
 
+@patch("apps.monitoring.services.observations.OpenMeteoCollector.collect")
 @patch("apps.monitoring.services.observations.PlumeCollector.collect")
 @patch("apps.monitoring.services.observations.MyCityAirCollector.collect")
 def test_collect_observations_persists_records_and_exposes_them(
     mycityair_collect,
     plume_collect,
+    open_meteo_collect,
     authenticated_client,
     json_post,
     mycityair_observation_factory,
@@ -24,6 +26,13 @@ def test_collect_observations_persists_records_and_exposes_them(
 ):
     mycityair_collect.return_value = [mycityair_observation_factory()]
     plume_collect.return_value = [plume_observation_factory()]
+    open_meteo_collect.return_value = [
+        plume_observation_factory(
+            source="open_meteo",
+            source_kind="open_meteo_api",
+            extra={"provider": "open_meteo"},
+        )
+    ]
 
     collect_response = json_post(
         "/api/monitoring/observations/collect",
@@ -36,12 +45,14 @@ def test_collect_observations_persists_records_and_exposes_them(
     )
 
     assert collect_response.status_code == 200
-    assert collect_response.json()["db_created_count"] == 2
-    assert ObservationModel.objects.count() == 2
+    assert collect_response.json()["db_created_count"] == 3
+    assert collect_response.json()["warnings"] == []
+    assert len(collect_response.json()["source_reports"]) == 3
+    assert ObservationModel.objects.count() == 3
 
     list_response = authenticated_client.get("/api/monitoring/observations?limit=10")
     assert list_response.status_code == 200
-    assert len(list_response.json()) == 2
+    assert len(list_response.json()) == 3
 
 
 def test_monitoring_overview_exposes_real_counts_and_collection_config(
@@ -75,7 +86,7 @@ def test_monitoring_overview_exposes_real_counts_and_collection_config(
     assert payload["automatic_collection"]["interval"] == "Interval1H"
     assert payload["automatic_collection"]["window_hours"] == 1
     assert payload["automatic_collection"]["schedule_minute"] == 5
-    assert payload["automatic_collection"]["enabled_sources"] == ["mycityair", "plumelabs"]
+    assert payload["automatic_collection"]["enabled_sources"] == ["mycityair", "plumelabs", "open_meteo"]
 
 
 def test_monitoring_overview_report_downloads_pdf(
@@ -156,11 +167,13 @@ def test_air_map_endpoint_groups_latest_station_points_and_city_metrics(
     assert {item["metric"] for item in payload["city_metrics"]} >= {"o3", "no2", "pm10", "pm25", "plume_index"}
 
 
+@patch("apps.monitoring.services.observations.OpenMeteoCollector.collect")
 @patch("apps.monitoring.services.observations.PlumeCollector.collect")
 @patch("apps.monitoring.services.observations.MyCityAirCollector.collect")
 def test_collect_observations_async_exposes_task_status(
     mycityair_collect,
     plume_collect,
+    open_meteo_collect,
     authenticated_client,
     json_post,
     mycityair_observation_factory,
@@ -168,6 +181,13 @@ def test_collect_observations_async_exposes_task_status(
 ):
     mycityair_collect.return_value = [mycityair_observation_factory()]
     plume_collect.return_value = [plume_observation_factory()]
+    open_meteo_collect.return_value = [
+        plume_observation_factory(
+            source="open_meteo",
+            source_kind="open_meteo_api",
+            extra={"provider": "open_meteo"},
+        )
+    ]
 
     response = json_post(
         "/api/monitoring/observations/collect/async",
@@ -186,7 +206,7 @@ def test_collect_observations_async_exposes_task_status(
     status_response = authenticated_client.get(f"/api/monitoring/tasks/{payload['task_id']}")
     assert status_response.status_code == 200
     assert status_response.json()["successful"] is True
-    assert status_response.json()["result"]["db_created_count"] == 2
+    assert status_response.json()["result"]["db_created_count"] == 3
 
 
 @patch("apps.monitoring.tasks.ModelLifecycleService.build_dataset")

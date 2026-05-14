@@ -20,6 +20,7 @@ dependencies = [
   "pandas>=2.3,<3.0",
   "torch>=2.8,<3.0",
   "requests>=2.32,<3.0",
+  "openmeteo-requests>=1.7,<2.0",
   "fake-useragent>=2.2,<3.0",
   "reportlab>=4.4,<5.0",
 ]
@@ -29,6 +30,7 @@ dev = [
   "pytest>=8.4,<9.0",
   "pytest-django>=4.11,<5.0",
   "ruff>=0.11,<0.12",
+  "mypy>=2.1,<3.0",
 ]
 
 [tool.setuptools.packages.find]
@@ -47,3 +49,22 @@ extend-exclude = ["migrations"]
 
 [tool.ruff.lint]
 select = ["E4", "E7", "E9", "F", "I"]
+
+[tool.mypy]
+python_version = "3.12"
+files = [
+  "apps/monitoring/ingestion",
+  "apps/monitoring/providers",
+  "apps/monitoring/selectors",
+  "apps/monitoring/services/observations.py",
+  "apps/monitoring/services/task_queue.py",
+  "apps/monitoring/ml/datasets",
+]
+exclude = "(^|/)(tests|migrations)/"
+ignore_missing_imports = true
+follow_imports = "skip"
+check_untyped_defs = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+no_implicit_optional = true
+pretty = true

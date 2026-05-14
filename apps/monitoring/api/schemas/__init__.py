@@ -27,6 +27,7 @@ from .observations import (
     AirMapSummarySchema,
     CollectObservationsPayload,
     ObservationSchema,
+    ObservationSourceReportSchema,
     ObservationSyncSchema,
 )
 from .overview import AutomaticCollectionSchema, MonitoringOverviewCountsSchema, MonitoringOverviewSchema
@@ -62,6 +63,7 @@ __all__ = (
     "MonitoringOverviewSchema",
     "ModelVersionSchema",
     "ObservationSchema",
+    "ObservationSourceReportSchema",
     "ObservationSyncSchema",
     "RunExperimentPayload",
     "ScheduledTaskSchema",

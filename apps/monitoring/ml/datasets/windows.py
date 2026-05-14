@@ -44,7 +44,7 @@ def build_sample_validity_mask(
     if n_samples <= 0:
         return np.array([], dtype=bool)
 
-    valid = np.ones(n_samples, dtype=bool)
+    valid: np.ndarray = np.ones(n_samples, dtype=bool)
     for index in range(n_samples):
         x_slice = feature_na[index : index + input_len]
         y_slice = target_na[index + input_len : index + input_len + horizon]

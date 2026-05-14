@@ -23,11 +23,18 @@ def load_observations(path: str) -> pd.DataFrame:
 
 
 def build_plume_wide(df: pd.DataFrame) -> pd.DataFrame:
-    plume = df[df["source"] == "plumelabs"].copy()
-    if plume.empty:
+    city = df[df["source"].isin(["plumelabs", "open_meteo"])].copy()
+    if city.empty:
         return pd.DataFrame(columns=["timestamp_utc"])
 
-    grouped = plume.groupby(["time_window_utc", "metric"], as_index=False)["value"].mean()
+    # Keep historical compatibility: when both providers are available for the same hour,
+    # prefer plume values and fill gaps from open-meteo.
+    priority = {"plumelabs": 0, "open_meteo": 1}
+    city["source_priority"] = city["source"].map(priority).fillna(9)
+    city = city.sort_values(["time_window_utc", "metric", "source_priority"])
+    selected = city.drop_duplicates(subset=["time_window_utc", "metric"], keep="first")
+
+    grouped = selected.groupby(["time_window_utc", "metric"], as_index=False)["value"].mean()
     wide = grouped.pivot(index="time_window_utc", columns="metric", values="value").reset_index()
 
     wide.columns.name = None
