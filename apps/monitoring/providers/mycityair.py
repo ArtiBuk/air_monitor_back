@@ -3,11 +3,12 @@ from typing import Any
 from ..config import MYCITYAIR_TOKEN
 from ..ingestion.types import Observation
 from ..ingestion.utils import floor_timestamp_to_hour, floor_timestamp_to_window, http_get_json
+from ..sources import SOURCE_MYCITYAIR
 from .base import BaseCollector
 
 
 class MyCityAirCollector(BaseCollector):
-    source_name = "mycityair"
+    source_name = SOURCE_MYCITYAIR
 
     URL = "https://eco-sources.mycityair.ru/api/basic/v1/group/66/timeline/widget"
 
@@ -15,8 +16,8 @@ class MyCityAirCollector(BaseCollector):
         self.token = token or MYCITYAIR_TOKEN
         self.window_hours = window_hours
 
-    def _headers(self) -> dict:
-        headers = {
+    def _headers(self) -> dict[str, str]:
+        headers: dict[str, str] = {
             "Accept": "application/json, text/plain, */*",
             "Origin": "https://norilsk.mycityair.ru",
             "Referer": "https://norilsk.mycityair.ru/",
@@ -33,7 +34,15 @@ class MyCityAirCollector(BaseCollector):
         }
         return http_get_json(self.URL, params=params, headers=self._headers())
 
-    def collect(self, *, start: str, finish: str, interval: str = "Interval1H") -> list[Observation]:
+    def collect(self, **kwargs: Any) -> list[Observation]:
+        start = kwargs.get("start")
+        finish = kwargs.get("finish")
+        interval = kwargs.get("interval", "Interval1H")
+        if not isinstance(start, str) or not isinstance(finish, str):
+            raise ValueError("MyCityAirCollector.collect requires string args: start, finish")
+        if not isinstance(interval, str):
+            raise ValueError("MyCityAirCollector.collect requires string arg: interval")
+
         payload = self.fetch_raw(start=start, finish=finish, interval=interval)
         observations: list[Observation] = []
 

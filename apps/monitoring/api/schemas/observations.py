@@ -36,11 +36,20 @@ class CollectObservationsPayload(Schema):
     scheduled_for: datetime | None = None
 
 
+class ObservationSourceReportSchema(Schema):
+    source: str
+    status: str
+    raw_count: int = 0
+    error: str = ""
+
+
 class ObservationSyncSchema(Schema):
     raw_count: int
     cleaned_count: int
     db_created_count: int
     db_updated_count: int
+    warnings: list[str] = []
+    source_reports: list[ObservationSourceReportSchema] = []
 
 
 class AirMapBoundsSchema(Schema):

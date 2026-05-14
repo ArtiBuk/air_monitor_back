@@ -4,11 +4,12 @@ from datetime import datetime, timezone
 
 from ..ingestion.types import Observation
 from ..ingestion.utils import floor_timestamp_to_hour, floor_timestamp_to_window, http_get_text
+from ..sources import SOURCE_PLUMELABS
 from .base import BaseCollector
 
 
 class PlumeCollector(BaseCollector):
-    source_name = "plumelabs"
+    source_name = SOURCE_PLUMELABS
 
     def __init__(self, page_url: str, window_hours: int = 3):
         self.page_url = page_url

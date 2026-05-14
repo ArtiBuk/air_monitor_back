@@ -40,6 +40,7 @@ METRIC_LABELS = {
 SOURCE_LABELS = {
     "mycityair": "Посты MyCityAir",
     "plumelabs": "Городской фон Plume Labs",
+    "open_meteo": "Городской фон Open-Meteo",
 }
 
 STATUS_LABELS = {

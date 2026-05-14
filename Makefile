@@ -5,6 +5,7 @@ COMPOSE := docker compose -p $(COMPOSE_PROJECT_NAME) -f docker/compose/infra.yml
 DEPLOY_COMPOSE := docker compose -p $(COMPOSE_PROJECT_NAME) -f docker/compose/infra.yml -f docker/compose/base.yml -f docker/compose/deploy.yml -f docker/compose/volumes.yml
 PYTEST := DJANGO_ENV=test .venv/bin/pytest
 RUFF := .venv/bin/ruff
+MYPY := .venv/bin/python -m mypy
 AIR_MONITOR_NETWORK_NAME ?= air-monitor-network
 APP_ENV_FILE ?= ../env/app.deploy.env
 DB_ENV_FILE ?= ../env/db.deploy.env
@@ -13,7 +14,7 @@ DEPLOY_STATE_DIR := .deploy
 DEPLOY_FRONTEND_DIR_FILE := $(DEPLOY_STATE_DIR)/frontend_dir
 WEB_CONTAINER_NAME ?= air-monitor-web
 
-.PHONY: help up down stop start restart build rebuild ps logs shell-web migrate makemigrations create-superuser pytest pytest-create-db lint format check hooks-install network-create deploy-env-init deploy-up deploy-down deploy-stop deploy-start deploy-restart deploy-build deploy-rebuild deploy-ps deploy-logs deploy-shell-web deploy-create-superuser deploy-wait-web deploy-up-all deploy-down-all
+.PHONY: help up down stop start restart build rebuild ps logs shell-web migrate makemigrations create-superuser pytest pytest-create-db lint format mypy check hooks-install network-create deploy-env-init deploy-up deploy-down deploy-stop deploy-start deploy-restart deploy-build deploy-rebuild deploy-ps deploy-logs deploy-shell-web deploy-create-superuser deploy-wait-web deploy-up-all deploy-down-all
 
 help:
 	@printf "Доступные команды:\n"
@@ -35,7 +36,8 @@ help:
 	@printf "  make pytest-create-db Пересоздать тестовую БД pytest\n"
 	@printf "  make lint             Запустить ruff check\n"
 	@printf "  make format           Запустить ruff format и ruff check --fix\n"
-	@printf "  make check            Запустить lint и тесты\n"
+	@printf "  make mypy             Запустить статическую типизацию (mypy)\n"
+	@printf "  make check            Запустить lint, mypy и тесты\n"
 	@printf "  make hooks-install    Подключить локальные git hooks из .githooks\n"
 	@printf "\nКоманды для деплоя:\n"
 	@printf "  make deploy-up        Поднять production-контур backend\n"
@@ -98,7 +100,10 @@ format:
 	$(RUFF) check --fix .
 	$(RUFF) format .
 
-check: lint pytest
+mypy:
+	$(MYPY)
+
+check: lint mypy pytest
 
 hooks-install:
 	git config core.hooksPath .githooks

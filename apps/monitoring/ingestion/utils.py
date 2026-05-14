@@ -1,5 +1,6 @@
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
+from types import ModuleType
 from typing import Any
 
 from ..config import DEFAULT_HEADERS, REQUEST_TIMEOUT, USE_FAKE_USER_AGENT
@@ -10,10 +11,13 @@ try:
 except ImportError:  # pragma: no cover
     requests = None
 
+fake_useragent: ModuleType | None
 try:
-    from fake_useragent import UserAgent
+    import fake_useragent as _fake_useragent
+
+    fake_useragent = _fake_useragent
 except ImportError:
-    UserAgent = None
+    fake_useragent = None
 
 
 _SESSION: requests.Session | None = None
@@ -32,9 +36,9 @@ def get_http_session() -> requests.Session:
     session.headers.update(DEFAULT_HEADERS)
 
     user_agent = None
-    if USE_FAKE_USER_AGENT and UserAgent is not None:
+    if USE_FAKE_USER_AGENT and fake_useragent is not None:
         try:
-            user_agent = UserAgent().chrome
+            user_agent = fake_useragent.UserAgent().chrome
         except Exception:
             user_agent = None
 
@@ -69,7 +73,8 @@ def http_get_json(
     session = get_http_session()
     resp = session.get(url, params=params, headers=headers, timeout=timeout)
     resp.raise_for_status()
-    return resp.json()
+    payload: dict = resp.json()
+    return payload
 
 
 def http_get_text(
@@ -82,7 +87,8 @@ def http_get_text(
     session = get_http_session()
     resp = session.get(url, params=params, headers=headers, timeout=timeout)
     resp.raise_for_status()
-    return resp.text
+    payload: str = resp.text
+    return payload
 
 
 def normalize_metric(metric: str | None) -> str | None:
@@ -303,8 +309,8 @@ def normalize_and_filter_observations(
     cleaned: list[Observation] = []
     seen: set[tuple] = set()
 
-    rejection_counter = Counter()
-    rejection_by_source = defaultdict(Counter)
+    rejection_counter: Counter[str] = Counter()
+    rejection_by_source: dict[str, Counter[str]] = defaultdict(Counter)
 
     for obs in observations:
         normalized = normalize_observation(obs, window_hours=window_hours)
