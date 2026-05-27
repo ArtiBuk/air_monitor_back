@@ -20,7 +20,150 @@ services:
     env_file:
       - ${DB_ENV_FILE:-../env/db.deploy.env}
 
+  prometheus:
+    image: prom/prometheus:v3.7.2
+    container_name: air-monitor-prometheus
+    hostname: air-monitor-prometheus
+    restart: unless-stopped
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=${PROMETHEUS_RETENTION_TIME:-15d}"
+      - "--web.enable-lifecycle"
+    volumes:
+      - ../../docker/monitoring/prometheus:/etc/prometheus:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    depends_on:
+      web:
+        condition: service_healthy
+      postgres_exporter:
+        condition: service_started
+      redis_exporter:
+        condition: service_started
+      cadvisor:
+        condition: service_started
+      node_exporter:
+        condition: service_started
+      alertmanager:
+        condition: service_started
+    networks:
+      - air_monitor_network
+
+  grafana:
+    image: grafana/grafana:12.2.0
+    container_name: air-monitor-grafana
+    hostname: air-monitor-grafana
+    restart: unless-stopped
+    env_file:
+      - ${APP_ENV_FILE:-../env/app.deploy.env}
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL:-http://localhost:3000}
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ../../docker/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../../docker/monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    depends_on:
+      prometheus:
+        condition: service_started
+    networks:
+      - air_monitor_network
+
+  alertmanager:
+    image: prom/alertmanager:v0.29.0
+    container_name: air-monitor-alertmanager
+    hostname: air-monitor-alertmanager
+    restart: unless-stopped
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+      - "--storage.path=/alertmanager"
+    volumes:
+      - ../../docker/monitoring/alertmanager:/etc/alertmanager:ro
+      - alertmanager_data:/alertmanager
+    ports:
+      - "${ALERTMANAGER_PORT:-9093}:9093"
+    networks:
+      - air_monitor_network
+
+  postgres_exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter:v0.18.1
+    container_name: air-monitor-postgres-exporter
+    hostname: air-monitor-postgres-exporter
+    restart: unless-stopped
+    env_file:
+      - ${DB_ENV_FILE:-../env/db.deploy.env}
+    entrypoint:
+      - /bin/sh
+      - -ec
+    command:
+      - |
+        export DATA_SOURCE_NAME="postgresql://$${POSTGRES_USER}:$${POSTGRES_PASSWORD}@$${POSTGRES_HOST}:$${POSTGRES_PORT}/$${POSTGRES_DB}?sslmode=disable"
+        exec postgres_exporter
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - air_monitor_network
+
+  redis_exporter:
+    image: oliver006/redis_exporter:v1.80.0
+    container_name: air-monitor-redis-exporter
+    hostname: air-monitor-redis-exporter
+    restart: unless-stopped
+    env_file:
+      - ${APP_ENV_FILE:-../env/app.deploy.env}
+    environment:
+      REDIS_ADDR: ${REDIS_EXPORTER_ADDR:-redis://redis:6379}
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - air_monitor_network
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.52.1
+    container_name: air-monitor-cadvisor
+    hostname: air-monitor-cadvisor
+    restart: unless-stopped
+    privileged: true
+    command:
+      - "--housekeeping_interval=30s"
+      - "--max_housekeeping_interval=35s"
+      - "--docker_only=true"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    networks:
+      - air_monitor_network
+
+  node_exporter:
+    image: prom/node-exporter:v1.9.1
+    container_name: air-monitor-node-exporter
+    hostname: air-monitor-node-exporter
+    restart: unless-stopped
+    command:
+      - "--path.rootfs=/host"
+      - "--collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var/lib/docker/.+)($|/)"
+    volumes:
+      - /:/host:ro
+    networks:
+      - air_monitor_network
+
 networks:
   air_monitor_network:
     name: ${AIR_MONITOR_NETWORK_NAME:-air-monitor-network}
     external: true
+
+volumes:
+  prometheus_data:
+  grafana_data:
+  alertmanager_data:
