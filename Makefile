@@ -13,8 +13,10 @@ FRONTEND_DIR ?= ../air_monitor_front
 DEPLOY_STATE_DIR := .deploy
 DEPLOY_FRONTEND_DIR_FILE := $(DEPLOY_STATE_DIR)/frontend_dir
 WEB_CONTAINER_NAME ?= air-monitor-web
+BACKEND_SERVICES := postgres redis web worker beat
+MONITORING_SERVICES := alertmanager postgres_exporter redis_exporter cadvisor node_exporter prometheus grafana
 
-.PHONY: help up down stop start restart build rebuild ps logs shell-web migrate makemigrations create-superuser pytest pytest-create-db lint format mypy check hooks-install network-create deploy-env-init deploy-up deploy-down deploy-stop deploy-start deploy-restart deploy-build deploy-rebuild deploy-ps deploy-logs deploy-shell-web deploy-create-superuser deploy-wait-web deploy-up-all deploy-down-all
+.PHONY: help up down stop start restart build rebuild ps logs shell-web migrate makemigrations create-superuser pytest pytest-create-db lint format mypy check hooks-install network-create deploy-env-init deploy-up deploy-down deploy-stop deploy-start deploy-restart deploy-build deploy-rebuild deploy-ps deploy-logs deploy-shell-web deploy-create-superuser deploy-wait-web deploy-monitor-up deploy-monitor-down deploy-monitor-logs deploy-up-all deploy-down-all
 
 help:
 	@printf "Доступные команды:\n"
@@ -45,8 +47,11 @@ help:
 	@printf "  make deploy-logs      Смотреть логи production-контейнеров\n"
 	@printf "  make deploy-shell-web Открыть shell внутри production web-контейнера\n"
 	@printf "  make deploy-create-superuser Создать superuser в production-контуре\n"
-	@printf "  make deploy-up-all    Поднять backend и frontend одной командой\n"
-	@printf "  make deploy-down-all  Остановить backend и frontend одной командой\n"
+	@printf "  make deploy-monitor-up Запустить Prometheus/Grafana/Alertmanager и exporters\n"
+	@printf "  make deploy-monitor-down Остановить monitoring-контур\n"
+	@printf "  make deploy-monitor-logs Смотреть логи monitoring-сервисов\n"
+	@printf "  make deploy-up-all    Поднять backend, frontend и monitoring одной командой\n"
+	@printf "  make deploy-down-all  Остановить backend, frontend и monitoring одной командой\n"
 
 up:
 	$(COMPOSE) up -d
@@ -116,16 +121,17 @@ deploy-env-init:
 	@test -f docker/env/db.deploy.env || cp docker/env/db.deploy.example.env docker/env/db.deploy.env
 
 deploy-up: network-create deploy-env-init
-	AIR_MONITOR_NETWORK_NAME=$(AIR_MONITOR_NETWORK_NAME) APP_ENV_FILE=$(APP_ENV_FILE) DB_ENV_FILE=$(DB_ENV_FILE) $(DEPLOY_COMPOSE) up -d
+	AIR_MONITOR_NETWORK_NAME=$(AIR_MONITOR_NETWORK_NAME) APP_ENV_FILE=$(APP_ENV_FILE) DB_ENV_FILE=$(DB_ENV_FILE) $(DEPLOY_COMPOSE) up -d $(BACKEND_SERVICES)
 
 deploy-down:
-	AIR_MONITOR_NETWORK_NAME=$(AIR_MONITOR_NETWORK_NAME) APP_ENV_FILE=$(APP_ENV_FILE) DB_ENV_FILE=$(DB_ENV_FILE) $(DEPLOY_COMPOSE) down
+	AIR_MONITOR_NETWORK_NAME=$(AIR_MONITOR_NETWORK_NAME) APP_ENV_FILE=$(APP_ENV_FILE) DB_ENV_FILE=$(DB_ENV_FILE) $(DEPLOY_COMPOSE) stop $(BACKEND_SERVICES)
+	AIR_MONITOR_NETWORK_NAME=$(AIR_MONITOR_NETWORK_NAME) APP_ENV_FILE=$(APP_ENV_FILE) DB_ENV_FILE=$(DB_ENV_FILE) $(DEPLOY_COMPOSE) rm -f $(BACKEND_SERVICES)
 
 deploy-stop:
-	AIR_MONITOR_NETWORK_NAME=$(AIR_MONITOR_NETWORK_NAME) APP_ENV_FILE=$(APP_ENV_FILE) DB_ENV_FILE=$(DB_ENV_FILE) $(DEPLOY_COMPOSE) stop
+	AIR_MONITOR_NETWORK_NAME=$(AIR_MONITOR_NETWORK_NAME) APP_ENV_FILE=$(APP_ENV_FILE) DB_ENV_FILE=$(DB_ENV_FILE) $(DEPLOY_COMPOSE) stop $(BACKEND_SERVICES)
 
 deploy-start: network-create deploy-env-init
-	AIR_MONITOR_NETWORK_NAME=$(AIR_MONITOR_NETWORK_NAME) APP_ENV_FILE=$(APP_ENV_FILE) DB_ENV_FILE=$(DB_ENV_FILE) $(DEPLOY_COMPOSE) start
+	AIR_MONITOR_NETWORK_NAME=$(AIR_MONITOR_NETWORK_NAME) APP_ENV_FILE=$(APP_ENV_FILE) DB_ENV_FILE=$(DB_ENV_FILE) $(DEPLOY_COMPOSE) start $(BACKEND_SERVICES)
 
 deploy-restart:
 	AIR_MONITOR_NETWORK_NAME=$(AIR_MONITOR_NETWORK_NAME) APP_ENV_FILE=$(APP_ENV_FILE) DB_ENV_FILE=$(DB_ENV_FILE) $(DEPLOY_COMPOSE) restart $(SERVICE)
@@ -137,7 +143,7 @@ deploy-rebuild: network-create deploy-env-init
 	AIR_MONITOR_NETWORK_NAME=$(AIR_MONITOR_NETWORK_NAME) APP_ENV_FILE=$(APP_ENV_FILE) DB_ENV_FILE=$(DB_ENV_FILE) $(DEPLOY_COMPOSE) build --no-cache
 
 deploy-ps:
-	AIR_MONITOR_NETWORK_NAME=$(AIR_MONITOR_NETWORK_NAME) APP_ENV_FILE=$(APP_ENV_FILE) DB_ENV_FILE=$(DB_ENV_FILE) $(DEPLOY_COMPOSE) ps
+	AIR_MONITOR_NETWORK_NAME=$(AIR_MONITOR_NETWORK_NAME) APP_ENV_FILE=$(APP_ENV_FILE) DB_ENV_FILE=$(DB_ENV_FILE) $(DEPLOY_COMPOSE) ps $(BACKEND_SERVICES)
 
 deploy-logs:
 	AIR_MONITOR_NETWORK_NAME=$(AIR_MONITOR_NETWORK_NAME) APP_ENV_FILE=$(APP_ENV_FILE) DB_ENV_FILE=$(DB_ENV_FILE) $(DEPLOY_COMPOSE) logs -f --tail=200 $(SERVICE)
@@ -164,13 +170,25 @@ deploy-wait-web:
 		sleep 2; \
 	done
 
+deploy-monitor-up: network-create deploy-env-init
+	AIR_MONITOR_NETWORK_NAME=$(AIR_MONITOR_NETWORK_NAME) APP_ENV_FILE=$(APP_ENV_FILE) DB_ENV_FILE=$(DB_ENV_FILE) $(DEPLOY_COMPOSE) up -d $(MONITORING_SERVICES)
+
+deploy-monitor-down:
+	AIR_MONITOR_NETWORK_NAME=$(AIR_MONITOR_NETWORK_NAME) APP_ENV_FILE=$(APP_ENV_FILE) DB_ENV_FILE=$(DB_ENV_FILE) $(DEPLOY_COMPOSE) stop $(MONITORING_SERVICES)
+	AIR_MONITOR_NETWORK_NAME=$(AIR_MONITOR_NETWORK_NAME) APP_ENV_FILE=$(APP_ENV_FILE) DB_ENV_FILE=$(DB_ENV_FILE) $(DEPLOY_COMPOSE) rm -f $(MONITORING_SERVICES)
+
+deploy-monitor-logs:
+	AIR_MONITOR_NETWORK_NAME=$(AIR_MONITOR_NETWORK_NAME) APP_ENV_FILE=$(APP_ENV_FILE) DB_ENV_FILE=$(DB_ENV_FILE) $(DEPLOY_COMPOSE) logs -f --tail=200 $(MONITORING_SERVICES)
+
 deploy-up-all: deploy-up deploy-wait-web
 	@test -d "$(FRONTEND_DIR)" || (printf "FRONTEND_DIR not found: %s\n" "$(FRONTEND_DIR)" >&2; exit 1)
 	@mkdir -p "$(DEPLOY_STATE_DIR)"
 	@printf "%s\n" "$$(cd "$(FRONTEND_DIR)" && pwd)" > "$(DEPLOY_FRONTEND_DIR_FILE)"
 	$(MAKE) -C $(FRONTEND_DIR) up AIR_MONITOR_NETWORK_NAME=$(AIR_MONITOR_NETWORK_NAME)
+	$(MAKE) deploy-monitor-up
 
 deploy-down-all:
+	$(MAKE) deploy-monitor-down || true
 	@frontend_dir="$(FRONTEND_DIR)"; \
 	if test -f "$(DEPLOY_FRONTEND_DIR_FILE)"; then frontend_dir="$$(cat "$(DEPLOY_FRONTEND_DIR_FILE)")"; fi; \
 	if test -d "$$frontend_dir"; then \
@@ -179,4 +197,4 @@ deploy-down-all:
 		docker rm -f air-monitor-frontend >/dev/null 2>&1 || true; \
 	fi
 	@rm -f "$(DEPLOY_FRONTEND_DIR_FILE)"
-	AIR_MONITOR_NETWORK_NAME=$(AIR_MONITOR_NETWORK_NAME) APP_ENV_FILE=$(APP_ENV_FILE) DB_ENV_FILE=$(DB_ENV_FILE) $(DEPLOY_COMPOSE) down
+	$(MAKE) deploy-down

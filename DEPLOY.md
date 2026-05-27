@@ -48,6 +48,8 @@ make deploy-env-init
 - `DJANGO_SUPERUSER_PASSWORD`
 - `DJANGO_ALLOWED_HOSTS`
 - `CSRF_TRUSTED_ORIGINS`
+- `GRAFANA_ADMIN_USER`
+- `GRAFANA_ADMIN_PASSWORD`
 
 Пример:
 
@@ -87,6 +89,23 @@ make deploy-up-all FRONTEND_DIR=/absolute/path/to/air_monitor_front
 - `http://123.123.123.123/`
 - `http://123.123.123.123/admin/`
 - `http://123.123.123.123/api/docs`
+- `http://123.123.123.123:3000/` (Grafana)
+- `http://123.123.123.123:9090/` (Prometheus)
+- `http://123.123.123.123:9093/` (Alertmanager)
+
+Дашборды и datasource в Grafana, а также rules в Prometheus загружаются автоматически из репозитория при старте контейнеров. Ничего руками в UI создавать не нужно.
+
+В Grafana автоматически появятся дашборды:
+
+- `Air Monitor Overview`
+- `Air Monitor NOC`
+- `Air Monitor Datastores`
+- `Air Monitor Django API`
+- `Air Monitor Infrastructure`
+- `Air Monitor Alerts`
+- `Air Monitor PostgreSQL`
+- `Air Monitor Redis`
+- `Air Monitor Frontend Nginx`
 
 Если admin не пускает, сначала проверь, что в `app.deploy.env` заполнены:
 

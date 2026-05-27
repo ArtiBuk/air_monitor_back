@@ -1,0 +1,83 @@
+groups:
+  - name: infrastructure
+    rules:
+      - alert: MonitoringTargetDown
+        expr: up == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Target is down: {{ $labels.job }} / {{ $labels.instance }}"
+          description: "Prometheus cannot scrape {{ $labels.job }} ({{ $labels.instance }}) for 2 minutes."
+
+      - alert: DjangoHigh5xxRate
+        expr: sum(rate(django_http_responses_total_by_status_total{status=~"5.."}[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High 5xx rate on Django API"
+          description: "5xx rate is above 0.05 req/s for 5 minutes."
+
+      - alert: DjangoHighP95Latency
+        expr: histogram_quantile(0.95, sum(rate(django_http_requests_latency_including_middlewares_seconds_bucket[5m])) by (le)) > 1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Django p95 latency"
+          description: "Django p95 latency is above 1 second for 10 minutes."
+
+      - alert: PostgresExporterDown
+        expr: up{job="postgres-exporter"} == 0
+        for: 3m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Postgres exporter is down"
+          description: "Prometheus cannot scrape postgres exporter for 3 minutes."
+
+      - alert: RedisExporterDown
+        expr: up{job="redis-exporter"} == 0
+        for: 3m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis exporter is down"
+          description: "Prometheus cannot scrape redis exporter for 3 minutes."
+
+      - alert: PostgresUnavailable
+        expr: max(pg_up) == 0
+        for: 3m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Postgres is unavailable"
+          description: "pg_up reported 0 for 3 minutes."
+
+      - alert: RedisUnavailable
+        expr: max(redis_up) == 0
+        for: 3m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis is unavailable"
+          description: "redis_up reported 0 for 3 minutes."
+
+      - alert: HostHighCPUUsage
+        expr: (1 - avg(rate(node_cpu_seconds_total{mode="idle"}[5m]))) * 100 > 90
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Host CPU usage is high"
+          description: "Average host CPU usage is above 90% for 10 minutes."
+
+      - alert: HostHighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 90
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Host memory usage is high"
+          description: "Host memory usage is above 90% for 10 minutes."

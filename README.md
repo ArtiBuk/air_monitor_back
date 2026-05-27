@@ -7,7 +7,6 @@ Backend сервиса мониторинга и краткосрочного п
 ## Что умеет backend
 
 - аутентификация пользователей через JWT в `HttpOnly` cookie;
-- сбор и хранение наблюдений из `MyCityAir` и городского фона `Plume Labs`;
 - сбор и хранение наблюдений из `MyCityAir`, `Open-Meteo` и (best effort) `Plume Labs`;
 - агрегация наблюдений в единый часовой ряд;
 - сборка `DatasetSnapshot` для воспроизводимого обучения;
@@ -172,18 +171,70 @@ make check
 ## Deploy
 
 Deploy-контур поднимает backend без bind mounts, публикует `web` только на `127.0.0.1:${APP_PORT}` и рассчитан на совместный запуск с frontend reverse proxy.
+Отдельно поднимается monitoring-стек (`Prometheus + Grafana + Alertmanager`), а также exporters для `PostgreSQL`, `Redis`, `Docker` и frontend `nginx`.
 
-Основные команды:
+Основные команды backend deploy-контура:
 
 ```bash
 make deploy-env-init
 make deploy-build
 make deploy-up
+make deploy-monitor-up
+make deploy-monitor-logs
+make deploy-monitor-down
 make deploy-up-all FRONTEND_DIR=../air_monitor_front
 make deploy-down-all
 ```
 
-`deploy-up-all` поднимает backend и frontend вместе, но не заменяет явную пересборку образов. При изменениях Dockerfile, зависимостей или frontend bundle перед запуском нужны `make deploy-build` и frontend `make build` либо `make rebuild`.
+`deploy-up-all` поднимает backend, frontend и monitoring вместе, но не заменяет явную пересборку образов. При изменениях Dockerfile, зависимостей или frontend bundle перед запуском нужны `make deploy-build` и frontend `make build` либо `make rebuild`.
+
+### Минимальный сценарий первого деплоя
+
+```bash
+make deploy-env-init
+make deploy-build
+make deploy-up-all FRONTEND_DIR=../air_monitor_front
+```
+
+После `deploy-up-all` доступны:
+
+- Grafana: `http://<host>:3000` (учётка из `GRAFANA_ADMIN_USER`/`GRAFANA_ADMIN_PASSWORD`);
+- Prometheus: `http://<host>:9090`;
+- Alertmanager: `http://<host>:9093`.
+
+Grafana и Prometheus настраиваются автоматически:
+
+- datasource `Prometheus` создаётся через provisioning;
+- папка `Air Monitor` и дашборды подхватываются автоматически при старте;
+- Prometheus подхватывает rules из `docker/monitoring/prometheus/rules`.
+
+Предзагруженные дашборды:
+
+- `Air Monitor Overview`
+- `Air Monitor NOC`
+- `Air Monitor Datastores`
+- `Air Monitor Django API`
+- `Air Monitor Infrastructure`
+- `Air Monitor Alerts`
+- `Air Monitor PostgreSQL`
+- `Air Monitor Redis`
+- `Air Monitor Frontend Nginx`
+
+### Быстрая проверка после старта
+
+```bash
+curl -sf http://127.0.0.1:9090/-/ready
+curl -sf http://127.0.0.1:9093/-/ready
+curl -sf http://127.0.0.1:8000/metrics | head -n 20
+curl -sf http://127.0.0.1:9090/api/v1/targets
+```
+
+Если `targets` в Prometheus не `up`, проверь логи:
+
+```bash
+make deploy-monitor-logs
+make deploy-logs
+```
 
 Подробности вынесены в [DEPLOY.md](DEPLOY.md).
 
@@ -200,6 +251,15 @@ make deploy-down-all
 - `MYCITYAIR_TOKEN`
 - `DJANGO_SUPERUSER_EMAIL`
 - `DJANGO_SUPERUSER_PASSWORD`
+- `GRAFANA_ADMIN_USER`
+- `GRAFANA_ADMIN_PASSWORD`
+
+Для управления monitoring-портами и retention при необходимости:
+
+- `PROMETHEUS_PORT`
+- `GRAFANA_PORT`
+- `ALERTMANAGER_PORT`
+- `PROMETHEUS_RETENTION_TIME`
 
 Для работы через белый IP также проверь:
 

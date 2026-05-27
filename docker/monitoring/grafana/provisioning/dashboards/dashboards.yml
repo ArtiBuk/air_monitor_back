@@ -1,0 +1,10 @@
+apiVersion: 1
+
+providers:
+  - name: air-monitor
+    folder: Air Monitor
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /var/lib/grafana/dashboards
