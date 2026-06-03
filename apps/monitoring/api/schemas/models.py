@@ -53,5 +53,9 @@ class ModelLeaderboardEntrySchema(Schema):
     is_active: bool
     dataset_sample_count: int
     dataset_master_row_count: int
+    dataset_latest_timestamp_utc: datetime | None = None
+    dataset_freshness_hours: float | None = None
+    quality_ratio_to_best: float | None = None
+    quality_delta_to_best: float | None = None
     metric_source: str
     latest_evaluated_at_utc: datetime | None = None

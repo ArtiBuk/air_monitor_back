@@ -6,10 +6,13 @@ from typing import Any
 from ..config import DEFAULT_HEADERS, REQUEST_TIMEOUT, USE_FAKE_USER_AGENT
 from .types import Observation
 
+requests: Any = None
 try:
-    import requests
+    import requests as _requests
 except ImportError:  # pragma: no cover
     requests = None
+else:
+    requests = _requests
 
 fake_useragent: ModuleType | None
 try:
