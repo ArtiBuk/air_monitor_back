@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from datetime import UTC, datetime
 
 from django.db import transaction
 
 from apps.monitoring.models import ForecastEvaluation, ModelVersion
+
+QUALITY_RATIO_GUARDRAIL = 6.0
 
 
 def _to_float(value) -> float | None:
@@ -27,6 +30,42 @@ def _summary_metrics(summary: dict | None) -> dict[str, float | None]:
 
 def _metric_sort_value(value: float | None) -> float:
     return value if value is not None else float("inf")
+
+
+def _parse_utc_timestamp(value) -> datetime | None:
+    if value is None:
+        return None
+
+    raw_value = str(value).strip()
+    if not raw_value:
+        return None
+    if raw_value.endswith("Z"):
+        raw_value = raw_value[:-1] + "+00:00"
+
+    try:
+        timestamp = datetime.fromisoformat(raw_value)
+    except ValueError:
+        return None
+
+    if timestamp.tzinfo is None:
+        return timestamp.replace(tzinfo=UTC)
+    return timestamp.astimezone(UTC)
+
+
+def _dataset_temporal_summary(dataset) -> dict[str, datetime | float | None]:
+    if dataset is None:
+        return {"dataset_latest_timestamp_utc": None, "dataset_freshness_hours": None}
+
+    metadata = dataset.metadata or {}
+    latest_timestamp = _parse_utc_timestamp(metadata.get("master_timestamp_max_utc"))
+    if latest_timestamp is None:
+        return {"dataset_latest_timestamp_utc": None, "dataset_freshness_hours": None}
+
+    freshness_hours = max((datetime.now(UTC) - latest_timestamp).total_seconds() / 3600.0, 0.0)
+    return {
+        "dataset_latest_timestamp_utc": latest_timestamp,
+        "dataset_freshness_hours": freshness_hours,
+    }
 
 
 def _list_ready_models() -> list[ModelVersion]:
@@ -108,6 +147,7 @@ def _build_ranking_entry(model_version: ModelVersion, evaluation_aggregate: dict
     )
 
     dataset = model_version.dataset
+    temporal_summary = _dataset_temporal_summary(dataset)
     return {
         "model_version_id": str(model_version.id),
         "model_name": model_version.name,
@@ -122,6 +162,8 @@ def _build_ranking_entry(model_version: ModelVersion, evaluation_aggregate: dict
         "latest_evaluated_at_utc": evaluation_aggregate.get("latest_evaluated_at_utc"),
         "dataset_sample_count": dataset.sample_count if dataset else 0,
         "dataset_master_row_count": dataset.master_row_count if dataset else 0,
+        "dataset_latest_timestamp_utc": temporal_summary["dataset_latest_timestamp_utc"],
+        "dataset_freshness_hours": temporal_summary["dataset_freshness_hours"],
         "metric_source": metric_source,
         "created_at": model_version.created_at,
         "model_version": model_version,
@@ -136,12 +178,18 @@ def _leaderboard_sort_key(metric: str, item: dict):
     }
     metric_order = metric_priority_map[metric]
     has_complete_metrics = 0 if all(item.get(metric_name) is not None for metric_name in metric_order) else 1
+    best_ratio = item.get("quality_ratio_to_best")
+    guardrail_breach = 1 if best_ratio is not None and best_ratio > QUALITY_RATIO_GUARDRAIL else 0
+    freshness_hours = item.get("dataset_freshness_hours")
+    freshness_sort_value = freshness_hours if freshness_hours is not None else float("inf")
     metric_source_priority = 0 if item["metric_source"] == "backtest" else 1
     created_at = item.get("created_at")
     created_timestamp = created_at.timestamp() if created_at is not None else 0.0
     return (
         has_complete_metrics,
+        guardrail_breach,
         metric_source_priority,
+        freshness_sort_value,
         *(_metric_sort_value(item.get(metric_name)) for metric_name in metric_order),
         -item["dataset_sample_count"],
         -item["dataset_master_row_count"],
@@ -160,6 +208,24 @@ def build_model_leaderboard(*, metric: str = "overall_rmse") -> list[dict]:
     leaderboard = [
         _build_ranking_entry(model, evaluation_aggregate=evaluation_aggregates.get(str(model.id))) for model in models
     ]
+
+    metric_field_map = {
+        "overall_rmse": "avg_overall_rmse",
+        "overall_mae": "avg_overall_mae",
+        "macro_mape": "avg_macro_mape",
+    }
+    metric_field = metric_field_map[metric]
+    metric_values = [item[metric_field] for item in leaderboard if item.get(metric_field) is not None]
+    best_metric_value = min(metric_values) if metric_values else None
+    for item in leaderboard:
+        metric_value = item.get(metric_field)
+        if metric_value is not None and best_metric_value not in (None, 0):
+            item["quality_ratio_to_best"] = metric_value / best_metric_value
+            item["quality_delta_to_best"] = metric_value - best_metric_value
+        else:
+            item["quality_ratio_to_best"] = None
+            item["quality_delta_to_best"] = None
+
     leaderboard.sort(key=lambda item: _leaderboard_sort_key(metric, item))
 
     for index, item in enumerate(leaderboard, start=1):

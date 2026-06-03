@@ -1,3 +1,5 @@
+from datetime import UTC, datetime, timedelta
+
 import pytest
 
 from apps.monitoring.services.model_selection import ModelSelectionService
@@ -96,3 +98,64 @@ def test_ensure_best_model_is_active_switches_flags_to_best_candidate(
     assert selected_model.id == best_model.id
     assert best_model.is_active is True
     assert old_model.is_active is False
+
+
+def test_model_selection_prefers_fresh_backtest_candidate_within_quality_guardrail(
+    dataset_snapshot_factory,
+    model_version_factory,
+    forecast_run_factory,
+    forecast_evaluation_factory,
+):
+    now = datetime.now(UTC)
+    stale_dataset = dataset_snapshot_factory(
+        sample_count=220,
+        master_row_count=440,
+        metadata={
+            "master_timestamp_min_utc": (now - timedelta(days=30)).isoformat().replace("+00:00", "Z"),
+            "master_timestamp_max_utc": (now - timedelta(days=14)).isoformat().replace("+00:00", "Z"),
+        },
+    )
+    fresh_dataset = dataset_snapshot_factory(
+        sample_count=260,
+        master_row_count=520,
+        metadata={
+            "master_timestamp_min_utc": (now - timedelta(days=2)).isoformat().replace("+00:00", "Z"),
+            "master_timestamp_max_utc": (now - timedelta(hours=2)).isoformat().replace("+00:00", "Z"),
+        },
+    )
+
+    stale_model = model_version_factory(
+        dataset=stale_dataset,
+        name="stale-champion",
+        is_active=True,
+        metrics={"summary": {"overall_rmse": 0.54, "overall_mae": 0.3, "macro_mape": 0.11}},
+    )
+    fresh_model = model_version_factory(
+        dataset=fresh_dataset,
+        name="fresh-production-candidate",
+        is_active=False,
+        metrics={"summary": {"overall_rmse": 2.95, "overall_mae": 1.95, "macro_mape": 0.42}},
+    )
+
+    forecast_evaluation_factory(
+        forecast_run=forecast_run_factory(model_version=stale_model),
+        metrics={"summary": {"overall_rmse": 0.52, "overall_mae": 0.28, "macro_mape": 0.1}},
+    )
+    forecast_evaluation_factory(
+        forecast_run=forecast_run_factory(model_version=fresh_model),
+        metrics={"summary": {"overall_rmse": 2.8, "overall_mae": 1.8, "macro_mape": 0.39}},
+    )
+
+    leaderboard = build_model_leaderboard(metric="overall_rmse")
+    selected_model = ModelSelectionService().ensure_best_model_is_active()
+
+    stale_model.refresh_from_db()
+    fresh_model.refresh_from_db()
+
+    assert leaderboard[0]["model_name"] == "fresh-production-candidate"
+    assert leaderboard[0]["dataset_freshness_hours"] is not None
+    assert leaderboard[0]["quality_ratio_to_best"] == pytest.approx(2.8 / 0.52, rel=1e-6)
+    assert selected_model is not None
+    assert selected_model.id == fresh_model.id
+    assert fresh_model.is_active is True
+    assert stale_model.is_active is False

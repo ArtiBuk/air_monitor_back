@@ -139,6 +139,8 @@ celerybeat.pid
 .env
 .envrc
 .venv
+.venv.py39.bak/
+.venv.py310.bak/
 env/
 venv/
 ENV/
@@ -208,6 +210,7 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 
+.DS_Store
 staticfiles/
 media/
 .env.local
